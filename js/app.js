@@ -116,6 +116,27 @@ function loadSiteContent(callback){
     // Logo: any <img data-site="logo"> gets its src set.
     if(c.logoUrl) document.querySelectorAll('img[data-site="logo"]').forEach(img=>img.src = c.logoUrl);
 
+    // Task cards on dashboard.html: admin-editable icon + label + link.
+    // Looks for a container with id="taskCardsGrid". If admin hasn't saved
+    // any custom cards yet, the page's own hardcoded default cards stay as-is.
+    if(c.taskCards && Array.isArray(c.taskCards) && c.taskCards.length){
+      const grid = document.getElementById('taskCardsGrid');
+      if(grid){
+        grid.innerHTML = "";
+        c.taskCards.forEach(function(t){
+          const a = document.createElement('a');
+          a.className = "grid-item";
+          a.href = t.link || "#";
+          const isImage = t.icon && /^https?:\/\//.test(t.icon);
+          const iconInner = isImage
+            ? '<img src="' + t.icon + '" style="width:28px;height:28px;object-fit:contain;">'
+            : (t.icon || "");
+          a.innerHTML = '<div class="ic">' + iconInner + '</div>' + (t.label || "");
+          grid.appendChild(a);
+        });
+      }
+    }
+
     if(typeof callback === "function") callback(c);
   });
 }
@@ -139,4 +160,4 @@ function loadUserProfile(callback){
       }
     });
   });
-    }
+}
