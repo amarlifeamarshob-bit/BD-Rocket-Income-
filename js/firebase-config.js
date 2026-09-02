@@ -1,17 +1,16 @@
 // ==========================================================
-// STEP 1: Go to https://console.firebase.google.com
-// Create a free project → Add a Web App → copy the config below
-// STEP 2: Enable "Authentication" → Email/Password sign-in method
-// STEP 3: Enable "Firestore Database" → Start in production mode
+// BD Rocket Income - Firebase Configuration
+// Project: bd-rocket-income
 // ==========================================================
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDRfxJImRXgdBrfX-ePtSCUOmw3xrheIpA",
+  authDomain: "bd-rocket-income.firebaseapp.com",
+  projectId: "bd-rocket-income",
+  storageBucket: "bd-rocket-income.firebasestorage.app",
+  messagingSenderId: "236558120688",
+  appId: "1:236558120688:web:096a2525478d7fd7f87435",
+  measurementId: "G-1FKJG24MRB"
 };
 
 firebase.initializeApp(firebaseConfig);
