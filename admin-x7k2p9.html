@@ -101,6 +101,58 @@
     </div>
     <div id="logoUploadProgress" class="muted" style="font-size:12px;"></div>
 
+    <h3 class="mt-16">🚀 হোমপেজের টাস্ক কার্ড (আইকন ও নাম)</h3>
+    <p class="muted" style="font-size:12px;">প্রতিটার জন্য ছবি আপলোড করো (ফোন থেকে সরাসরি বাছাই করা যাবে)। ছবি না দিলে ইমোজি লিখলেও চলবে।</p>
+
+    <div class="rate-row" style="align-items:flex-start;">
+      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ১</label>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <img id="tcIconPreview1" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
+          <input type="file" id="tcIconFile1" accept="image/*" style="flex:1;">
+        </div>
+        <input type="text" id="tcIcon1" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন 📺">
+      </div>
+      <input type="text" id="tcLabel1" placeholder="Ad ভিউ" style="flex:1;">
+    </div>
+
+    <div class="rate-row" style="align-items:flex-start;">
+      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ২</label>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <img id="tcIconPreview2" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
+          <input type="file" id="tcIconFile2" accept="image/*" style="flex:1;">
+        </div>
+        <input type="text" id="tcIcon2" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন 📝">
+      </div>
+      <input type="text" id="tcLabel2" placeholder="সার্ভে" style="flex:1;">
+    </div>
+
+    <div class="rate-row" style="align-items:flex-start;">
+      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ৩</label>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <img id="tcIconPreview3" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
+          <input type="file" id="tcIconFile3" accept="image/*" style="flex:1;">
+        </div>
+        <input type="text" id="tcIcon3" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন ⌨️">
+      </div>
+      <input type="text" id="tcLabel3" placeholder="মাইক্রো জব" style="flex:1;">
+    </div>
+
+    <div class="rate-row" style="align-items:flex-start;">
+      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ৪</label>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <img id="tcIconPreview4" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
+          <input type="file" id="tcIconFile4" accept="image/*" style="flex:1;">
+        </div>
+        <input type="text" id="tcIcon4" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন 👥">
+      </div>
+      <input type="text" id="tcLabel4" placeholder="রেফার" style="flex:1;">
+    </div>
+    <div id="taskIconUploadProgress" class="muted" style="font-size:12px;"></div>
+
     <button class="btn btn-primary mt-16" onclick="saveSiteContent()">সেভ করুন</button>
     <div id="siteContentAlert" class="mt-16"></div>
   </div>
@@ -173,7 +225,7 @@
   // verification happens on Firebase's server (signInWithEmailAndPassword)
   // plus the Firestore "admins" collection check below — neither can
   // be bypassed by viewing the page source.
-  const ADMIN_EMAIL = "amarlifeamarshob@gmail.com";
+  const ADMIN_EMAIL = "gojolsong@gmail.com";
 
   function showSection(id, btn){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -346,6 +398,23 @@
     }
   });
 
+  // ---- Task card icon uploads ----
+  let pendingTaskIconFiles = [null, null, null, null];
+  [1,2,3,4].forEach(function(n){
+    document.getElementById('tcIconFile' + n).addEventListener('change', function(){
+      pendingTaskIconFiles[n-1] = this.files[0] || null;
+      if(pendingTaskIconFiles[n-1]){
+        const reader = new FileReader();
+        reader.onload = e=>{
+          const img = document.getElementById('tcIconPreview' + n);
+          img.src = e.target.result;
+          img.style.display = 'inline-block';
+        };
+        reader.readAsDataURL(pendingTaskIconFiles[n-1]);
+      }
+    });
+  });
+
   function loadSiteContent(){
     db.collection("settings").doc("siteContent").get().then(doc=>{
       const c = doc.exists ? doc.data() : {};
@@ -362,12 +431,33 @@
         img.src = currentLogoUrl;
         img.style.display = 'inline-block';
       }
+
+      // Task cards — fall back to the site's current defaults if admin
+      // hasn't customized them yet.
+      const defaults = [
+        { icon: "📺", label: "Ad ভিউ" },
+        { icon: "📝", label: "সার্ভে" },
+        { icon: "⌨️", label: "মাইক্রো জব" },
+        { icon: "👥", label: "রেফার" }
+      ];
+      const cards = (c.taskCards && c.taskCards.length === 4) ? c.taskCards : defaults;
+      cards.forEach((t, i)=>{
+        document.getElementById('tcIcon' + (i+1)).value = t.icon || "";
+        document.getElementById('tcLabel' + (i+1)).value = t.label || "";
+        const isImage = t.icon && /^https?:\/\//.test(t.icon);
+        if(isImage){
+          const img = document.getElementById('tcIconPreview' + (i+1));
+          img.src = t.icon;
+          img.style.display = 'inline-block';
+        }
+      });
     });
   }
 
   function saveSiteContent(){
     const alertBox = document.getElementById('siteContentAlert');
     const progress = document.getElementById('logoUploadProgress');
+    const iconProgress = document.getElementById('taskIconUploadProgress');
     alertBox.innerHTML = "";
 
     const baseData = {
@@ -379,29 +469,56 @@
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    function finalSave(logoUrl){
+    const anyUploading = pendingLogoFile || pendingTaskIconFiles.some(f=>f);
+    if(anyUploading){
+      progress.textContent = "ছবি আপলোড হচ্ছে...";
+      iconProgress.textContent = "ছবি আপলোড হচ্ছে...";
+    }
+
+    // Logo upload (or skip if no new file chosen)
+    const logoPromise = pendingLogoFile
+      ? storage.ref("logos/" + Date.now() + "_" + pendingLogoFile.name).put(pendingLogoFile).then(snap=>snap.ref.getDownloadURL())
+      : Promise.resolve(null);
+
+    // 4 task icon uploads (each resolves to a new URL, or null if no new file chosen)
+    const iconPromises = [1,2,3,4].map(function(n){
+      const file = pendingTaskIconFiles[n-1];
+      if(!file) return Promise.resolve(null);
+      return storage.ref("taskIcons/" + Date.now() + "_" + n + "_" + file.name).put(file).then(snap=>snap.ref.getDownloadURL());
+    });
+
+    Promise.all([logoPromise, ...iconPromises]).then(function(results){
+      const logoUrl = results[0];
       baseData.logoUrl = logoUrl || currentLogoUrl || "";
+
+      const links = ["tasks.html?type=ad", "tasks.html?type=survey", "tasks.html?type=microjob", "refer.html"];
+      baseData.taskCards = [1,2,3,4].map(function(n){
+        const uploadedUrl = results[n]; // results[1..4]
+        const icon = uploadedUrl || document.getElementById('tcIcon' + n).value.trim();
+        return {
+          icon: icon,
+          label: document.getElementById('tcLabel' + n).value.trim(),
+          link: links[n-1]
+        };
+      });
+
+      pendingLogoFile = null;
+      pendingTaskIconFiles = [null, null, null, null];
+
       db.collection("settings").doc("siteContent").set(baseData, { merge: true }).then(()=>{
         alertBox.innerHTML = '<div class="alert alert-success">কনটেন্ট সেভ হয়েছে</div>';
         progress.textContent = "";
-      }).catch(err=>{
-        alertBox.innerHTML = '<div class="alert alert-error">সেভ ব্যর্থ হয়েছে: ' + err.message + '</div>';
-      });
-    }
-
-    if(pendingLogoFile){
-      progress.textContent = "লোগো আপলোড হচ্ছে...";
-      const ref = storage.ref("logos/" + Date.now() + "_" + pendingLogoFile.name);
-      ref.put(pendingLogoFile).then(snap=>snap.ref.getDownloadURL()).then(url=>{
-        pendingLogoFile = null;
-        finalSave(url);
+        iconProgress.textContent = "";
       }).catch(err=>{
         progress.textContent = "";
-        alertBox.innerHTML = '<div class="alert alert-error">লোগো আপলোড ব্যর্থ: ' + err.message + '</div>';
+        iconProgress.textContent = "";
+        alertBox.innerHTML = '<div class="alert alert-error">সেভ ব্যর্থ হয়েছে: ' + err.message + '</div>';
       });
-    } else {
-      finalSave(null);
-    }
+    }).catch(function(err){
+      progress.textContent = "";
+      iconProgress.textContent = "";
+      alertBox.innerHTML = '<div class="alert alert-error">ছবি আপলোড ব্যর্থ: ' + err.message + '</div>';
+    });
   }
 
   // ================= Questions (survey Q&A) =================
