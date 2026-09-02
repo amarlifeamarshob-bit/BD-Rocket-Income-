@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Users can read/create their own profile, but CANNOT edit their own
+    // balance or activationStatus (only the admin can, via the console
+    // or admin.html which is itself gated by the /admins collection).
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAdmin();
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if isAdmin();
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.balance == resource.data.balance
+        && request.resource.data.activationStatus == resource.data.activationStatus;
+    }
+
+    // Submissions: user can create their own, only admin can approve/reject
+    match /submissions/{subId} {
+      allow read: if request.auth != null &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == "pending";
+      allow update: if isAdmin();
+    }
+
+    // Withdrawals: same pattern
+    match /withdrawals/{wId} {
+      allow read: if request.auth != null &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == "pending";
+      allow update: if isAdmin();
+    }
+
+    // Rates: everyone logged in can read, only admin can write
+    match /settings/{doc} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Admins list: never writable from the client
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}

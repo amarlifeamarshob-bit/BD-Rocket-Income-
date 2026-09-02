@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ওয়ালেট | BD Rocket Income</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="brand"><img src="assets/logo.jpg" alt="logo">BD ROCKET INCOME</div>
+    <button class="icon-btn" onclick="window.location.href='dashboard.html'">✕</button>
+  </div>
+  <div class="welcome-card" style="margin-top:14px;">
+    <div class="welcome-left">
+      <div class="avatar">💰</div>
+      <div><small>বর্তমান ব্যালেন্স</small><h2 id="balanceDisplay">৳0.00</h2></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="section-title">💳 উইথড্র করুন</div>
+    <div id="alertBox"></div>
+
+    <label>পরিমাণ বাছাই করুন</label>
+    <select id="amountSelect" onchange="updateFeePreview()">
+      <option value="">-- পরিমাণ নির্বাচন করুন --</option>
+      <option value="150">৳150</option>
+      <option value="250">৳250</option>
+      <option value="350">৳350</option>
+      <option value="450">৳450</option>
+      <option value="550">৳550</option>
+      <option value="1150">৳1150</option>
+    </select>
+
+    <div class="card" style="background:#f4f6fb;box-shadow:none;padding:14px;margin-bottom:14px;display:none;" id="feePreview">
+      <div class="row-between muted"><span>উইথড্র পরিমাণ</span><span id="feeAmount">৳0</span></div>
+      <div class="row-between muted"><span>ফি (10%)</span><span id="feeCut">৳0</span></div>
+      <div class="row-between" style="font-weight:800;margin-top:6px;"><span>হাতে পাবেন</span><span id="feeNet">৳0</span></div>
+    </div>
+
+    <label>মেথড</label>
+    <select id="methodSelect">
+      <option value="bkash">bKash</option>
+      <option value="nagad">Nagad</option>
+    </select>
+
+    <label>অ্যাকাউন্ট নম্বর</label>
+    <input type="text" id="accNumber" placeholder="01XXXXXXXXX">
+
+    <button class="btn btn-primary" onclick="doWithdraw()">উইথড্র রিকোয়েস্ট পাঠান</button>
+    <p class="field-note center mt-16">মিনিমাম উইথড্র ৳150। প্রতিটি উইথড্রতে ১০% ফি কাটা হবে। রিকোয়েস্ট অ্যাডমিন ম্যানুয়ালি যাচাই করে পাঠাবে।</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📜 উইথড্র হিস্টোরি</div>
+    <table>
+      <thead><tr><th>পরিমাণ</th><th>হাতে পাবেন</th><th>স্ট্যাটাস</th></tr></thead>
+      <tbody id="historyBody">
+        <tr><td colspan="3" class="muted center">লোড হচ্ছে...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="#" class="nav-item">🎧<span>Help</span></a>
+  <a href="wallet.html" class="nav-item active">💳<span>Wallet</span></a>
+  <a href="dashboard.html" class="nav-item">🏠<span>Home</span></a>
+  <a href="refer.html" class="nav-item">👥<span>Team</span></a>
+  <a href="profile.html" class="nav-item">👤<span>Profile</span></a>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let currentUid = null;
+  let currentBalance = 0;
+
+  loadUserProfile(function(profile){
+    currentUid = profile.uid;
+    currentBalance = profile.balance || 0;
+    document.getElementById('balanceDisplay').textContent = "৳" + currentBalance.toFixed(2);
+    loadHistory(profile.uid);
+  });
+
+  function updateFeePreview(){
+    const amount = parseFloat(document.getElementById('amountSelect').value);
+    const preview = document.getElementById('feePreview');
+    if(!amount){ preview.style.display = "none"; return; }
+    const { fee, net } = calcWithdraw(amount);
+    document.getElementById('feeAmount').textContent = "৳" + amount.toFixed(2);
+    document.getElementById('feeCut').textContent = "৳" + fee.toFixed(2);
+    document.getElementById('feeNet').textContent = "৳" + net.toFixed(2);
+    preview.style.display = "block";
+  }
+
+  function doWithdraw(){
+    const alertBox = document.getElementById('alertBox');
+    alertBox.innerHTML = "";
+    const amount = parseFloat(document.getElementById('amountSelect').value);
+    const method = document.getElementById('methodSelect').value;
+    const accountNumber = document.getElementById('accNumber').value.trim();
+
+    if(!amount){ alertBox.innerHTML = '<div class="alert alert-error">পরিমাণ নির্বাচন করুন</div>'; return; }
+    if(!accountNumber){ alertBox.innerHTML = '<div class="alert alert-error">অ্যাকাউন্ট নম্বর দিন</div>'; return; }
+    if(amount > currentBalance){ alertBox.innerHTML = '<div class="alert alert-error">অপর্যাপ্ত ব্যালেন্স</div>'; return; }
+
+    requestWithdraw({ uid: currentUid, amount, method, accountNumber }).then(()=>{
+      alertBox.innerHTML = '<div class="alert alert-success">উইথড্র রিকোয়েস্ট পাঠানো হয়েছে — অ্যাডমিন অনুমোদনের অপেক্ষায়</div>';
+      loadHistory(currentUid);
+    }).catch(err=>{
+      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
+    });
+  }
+
+  function loadHistory(uid){
+    db.collection("withdrawals").where("uid","==",uid).orderBy("createdAt","desc").limit(10).get().then(function(snap){
+      const body = document.getElementById('historyBody');
+      if(snap.empty){
+        body.innerHTML = '<tr><td colspan="3" class="muted center">এখনো কোনো উইথড্র নেই</td></tr>';
+        return;
+      }
+      body.innerHTML = "";
+      snap.forEach(doc=>{
+        const d = doc.data();
+        const badgeClass = d.status === "approved" ? "badge-approved" : d.status === "rejected" ? "badge-rejected" : "badge-pending";
+        body.innerHTML += `<tr><td>৳${d.amount.toFixed(2)}</td><td>৳${d.netAmount.toFixed(2)}</td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`;
+      });
+    }).catch(()=>{
+      document.getElementById('historyBody').innerHTML = '<tr><td colspan="3" class="muted center">লোড করা যায়নি</td></tr>';
+    });
+  }
+</script>
+</body>
+</html>

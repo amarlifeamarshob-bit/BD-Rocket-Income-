@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>একাউন্ট একটিভেশন | BD Rocket Income</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .wrap{max-width:460px;margin:0 auto;padding:28px 18px;}
+  .qr-box{
+    background:#fff;border-radius:16px;padding:20px;text-align:center;
+    box-shadow:0 10px 24px rgba(11,31,77,0.08);margin-bottom:16px;
+  }
+  .qr-box img{width:100%;max-width:260px;border-radius:10px;}
+  .merchant-num{
+    font-size:20px;font-weight:800;color:var(--navy);letter-spacing:1px;margin-top:10px;
+  }
+  .steps{font-size:13.5px;color:var(--muted);line-height:1.9;text-align:left;margin-top:14px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h2 class="center">অ্যাকাউন্ট অ্যাক্টিভেট করুন</h2>
+  <p class="center muted">একবারের জন্য ৳50 একটিভেশন ফি — এরপর আপনি সব টাস্ক করে ইনকাম শুরু করতে পারবেন</p>
+
+  <div class="qr-box">
+    <p class="muted" style="margin-top:0;">bKash Merchant নম্বরে ৳50 Send Money করুন</p>
+    <img src="assets/logo.jpg" alt="bKash QR (এখানে আপনার আসল bKash QR কোড বসান)">
+    <div class="merchant-num">01XXXXXXXXX</div>
+    <div class="steps">
+      ১. bKash অ্যাপ খুলুন → Send Money<br>
+      ২. উপরের নম্বরে ৳50 পাঠান<br>
+      ৩. পেমেন্ট শেষে যে Transaction ID পাবেন সেটা নিচে দিন<br>
+      ৪. অ্যাডমিন ম্যানুয়ালি ভেরিফাই করে অ্যাকাউন্ট একটিভ করবে (সাধারণত কিছুক্ষণের মধ্যে)
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="alertBox"></div>
+    <label>bKash Transaction ID</label>
+    <input type="text" id="trxId" placeholder="যেমন: 9G7H2K4L1M">
+    <button class="btn btn-primary" onclick="submitTrx()">সাবমিট করুন</button>
+  </div>
+
+  <div class="card center" id="statusCard" style="display:none;">
+    <p class="muted">বর্তমান স্ট্যাটাস</p>
+    <span class="badge" id="statusBadge"></span>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let currentUid = null;
+
+  loadUserProfile(function(profile){
+    currentUid = profile.uid;
+    if(profile.activationStatus === "approved"){
+      window.location.href = "dashboard.html";
+      return;
+    }
+    if(profile.activationStatus === "pending" || profile.activationStatus === "rejected"){
+      document.getElementById('statusCard').style.display = "block";
+      const badge = document.getElementById('statusBadge');
+      if(profile.activationStatus === "pending"){
+        badge.className = "badge badge-pending";
+        badge.textContent = "যাচাই করা হচ্ছে — অনুগ্রহ করে অপেক্ষা করুন";
+      } else {
+        badge.className = "badge badge-rejected";
+        badge.textContent = "রিজেক্টেড — সঠিক Transaction ID দিয়ে আবার চেষ্টা করুন";
+      }
+    }
+  });
+
+  function submitTrx(){
+    const trxId = document.getElementById('trxId').value.trim();
+    const alertBox = document.getElementById('alertBox');
+    alertBox.innerHTML = "";
+    if(!trxId){
+      alertBox.innerHTML = '<div class="alert alert-error">Transaction ID দিন</div>';
+      return;
+    }
+    submitActivationTrxId(currentUid, trxId).then(()=>{
+      alertBox.innerHTML = '<div class="alert alert-success">সাবমিট হয়েছে — অ্যাডমিন ভেরিফাই করার পর আপনি ড্যাশবোর্ডে যেতে পারবেন</div>';
+    }).catch(err=>{
+      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা হয়েছে: ' + err.message + '</div>';
+    });
+  }
+</script>
+</body>
+</html>

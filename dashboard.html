@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | BD Rocket Income</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="brand"><img src="assets/logo.jpg" alt="logo">BD ROCKET INCOME</div>
+    <button class="icon-btn">🔔</button>
+  </div>
+  <div class="welcome-card">
+    <div class="welcome-left">
+      <div class="avatar" id="avatarInitial">R</div>
+      <div>
+        <small>WELCOME BACK,</small>
+        <h2 id="userName">—</h2>
+      </div>
+    </div>
+    <div class="wallet-pill">৳ <span id="userBalance">0.00</span></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="notice">
+    <span class="tag">Notice</span>
+    <span>প্রতিদিন নতুন টাস্ক ও রেফার বোনাস পেতে নোটিফিকেশন চালু রাখুন</span>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🚀 আমাদের টাস্ক সমূহ</div>
+    <div class="grid4">
+      <a class="grid-item" href="tasks.html?type=ad">
+        <div class="ic">📺</div> Ad ভিউ
+      </a>
+      <a class="grid-item" href="tasks.html?type=survey">
+        <div class="ic">📝</div> সার্ভে
+      </a>
+      <a class="grid-item" href="tasks.html?type=microjob">
+        <div class="ic">⌨️</div> মাইক্রো জব
+      </a>
+      <a class="grid-item" href="refer.html">
+        <div class="ic">👥</div> রেফার
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">💼 কুইক অ্যাকশন</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a href="wallet.html" class="btn btn-outline">💰 উইথড্র করুন</a>
+      <a href="refer.html" class="btn btn-outline">🔗 আমার রেফার লিংক</a>
+      <button class="btn btn-danger" onclick="logout()">লগ আউট</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="#" class="nav-item">🎧<span>Help</span></a>
+  <a href="wallet.html" class="nav-item">💳<span>Wallet</span></a>
+  <a href="dashboard.html" class="nav-item active">🏠<span>Home</span></a>
+  <a href="refer.html" class="nav-item">👥<span>Team</span></a>
+  <a href="profile.html" class="nav-item">👤<span>Profile</span></a>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+<script>
+  loadUserProfile(function(profile){
+    if(profile.activationStatus !== "approved"){
+      window.location.href = "activate.html";
+      return;
+    }
+    document.getElementById('userName').textContent = profile.name || "User";
+    document.getElementById('avatarInitial').textContent = (profile.name || "U")[0].toUpperCase();
+    document.getElementById('userBalance').textContent = (profile.balance || 0).toFixed(2);
+  });
+</script>
+</body>
+</html>

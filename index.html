@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Rocket Income | Login</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body{padding-bottom:24px;}
+  .auth-wrap{max-width:440px;margin:0 auto;padding:36px 18px;}
+  .logo-row{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;}
+  .logo-row img{width:76px;height:76px;border-radius:18px;object-fit:cover;box-shadow:0 10px 24px rgba(11,31,77,0.15);}
+  .logo-row h1{font-size:19px;margin:0;color:var(--navy);}
+  .logo-row p{margin:0;font-size:13px;color:var(--muted);}
+  .tabs{display:flex;background:#eef1fa;border-radius:12px;padding:4px;margin-bottom:20px;}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:9px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--muted);}
+  .tab.active{background:#fff;color:var(--navy);box-shadow:0 4px 10px rgba(11,31,77,0.08);}
+</style>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="logo-row">
+    <img src="assets/logo.jpg" alt="BD Rocket Income">
+    <h1>BD Rocket Income</h1>
+    <p>মাইক্রো জব করে প্রতিদিন আয় করুন</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabLogin" onclick="showTab('login')">লগ ইন</div>
+    <div class="tab" id="tabSignup" onclick="showTab('signup')">সাইন আপ</div>
+  </div>
+
+  <div id="loginBox" class="card">
+    <div id="loginAlert"></div>
+    <label>ইমেইল</label>
+    <input type="email" id="loginEmail" placeholder="you@example.com">
+    <label>পাসওয়ার্ড</label>
+    <input type="password" id="loginPassword" placeholder="••••••••">
+    <button class="btn btn-primary" onclick="handleLogin()">লগ ইন করুন</button>
+  </div>
+
+  <div id="signupBox" class="card hidden">
+    <div id="signupAlert"></div>
+    <label>পূর্ণ নাম</label>
+    <input type="text" id="suName" placeholder="আপনার নাম">
+    <label>মোবাইল নম্বর</label>
+    <input type="text" id="suPhone" placeholder="017XXXXXXXX">
+    <label>ইমেইল</label>
+    <input type="email" id="suEmail" placeholder="you@example.com">
+    <label>পাসওয়ার্ড</label>
+    <input type="password" id="suPassword" placeholder="কমপক্ষে ৬ ক্যারেক্টার">
+    <div class="field-note" id="refNote"></div>
+    <button class="btn btn-gold" onclick="handleSignup()">অ্যাকাউন্ট তৈরি করুন</button>
+  </div>
+
+  <p class="center muted mt-16">সমস্যা হলে Help সেকশনে যোগাযোগ করুন</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+<script>
+  function showTab(which){
+    document.getElementById('tabLogin').classList.toggle('active', which==='login');
+    document.getElementById('tabSignup').classList.toggle('active', which==='signup');
+    document.getElementById('loginBox').classList.toggle('hidden', which!=='login');
+    document.getElementById('signupBox').classList.toggle('hidden', which!=='signup');
+  }
+
+  const ref = getRefFromURL();
+  if(ref){
+    document.getElementById('refNote').textContent = "রেফার কোড প্রয়োগ হয়েছে: " + ref;
+    showTab('signup');
+  }
+
+  function handleLogin(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const alertBox = document.getElementById('loginAlert');
+    alertBox.innerHTML = "";
+    if(!email || !password){
+      alertBox.innerHTML = '<div class="alert alert-error">ইমেইল ও পাসওয়ার্ড দিন</div>';
+      return;
+    }
+    loginUser({email, password}).then(()=>{
+      window.location.href = "dashboard.html";
+    }).catch(err=>{
+      alertBox.innerHTML = '<div class="alert alert-error">লগইন ব্যর্থ: ' + err.message + '</div>';
+    });
+  }
+
+  function handleSignup(){
+    const name = document.getElementById('suName').value.trim();
+    const phone = document.getElementById('suPhone').value.trim();
+    const email = document.getElementById('suEmail').value.trim();
+    const password = document.getElementById('suPassword').value;
+    const alertBox = document.getElementById('signupAlert');
+    alertBox.innerHTML = "";
+    if(!name || !phone || !email || password.length < 6){
+      alertBox.innerHTML = '<div class="alert alert-error">সব ঘর সঠিকভাবে পূরণ করুন (পাসওয়ার্ড কমপক্ষে ৬ অক্ষর)</div>';
+      return;
+    }
+    signupUser({name, phone, email, password}).then(()=>{
+      window.location.href = "activate.html";
+    }).catch(err=>{
+      alertBox.innerHTML = '<div class="alert alert-error">সাইনআপ ব্যর্থ: ' + err.message + '</div>';
+    });
+  }
+</script>
+</body>
+</html>
