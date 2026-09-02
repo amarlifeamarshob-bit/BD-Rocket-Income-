@@ -35,6 +35,8 @@
     <button onclick="showSection('submissions',this)">Task Submissions</button>
     <button onclick="showSection('withdrawals',this)">Withdrawals</button>
     <button onclick="showSection('rates',this)">Rates</button>
+    <button onclick="showSection('siteContent',this)">Site Content</button>
+    <button onclick="showSection('questions',this)">Questions</button>
   </div>
 
   <div id="activations" class="section active card">
@@ -71,11 +73,91 @@
     <div id="ratesAlert" class="mt-16"></div>
   </div>
 
+  <div id="siteContent" class="section card">
+    <h3>সাইট কনটেন্ট</h3>
+
+    <label>সাইটের নাম</label>
+    <input type="text" id="cfgSiteName" placeholder="যেমন: BD Rocket Income">
+
+    <label>হিরো টাইটেল (হোমপেজের বড় হেডিং)</label>
+    <input type="text" id="cfgHeroTitle" placeholder="যেমন: ঘরে বসে আয় করুন">
+
+    <label>হিরো সাব-টেক্সট</label>
+    <textarea id="cfgHeroSubtitle" rows="2" placeholder="হেডিং এর নিচের ছোট লেখা"></textarea>
+
+    <label>নোটিস / ঘোষণা (ড্যাশবোর্ডে দেখাবে)</label>
+    <textarea id="cfgNotice" rows="3" placeholder="যেমন: আজ সার্ভার মেইনটেনেন্স থাকবে..."></textarea>
+
+    <label>থিম কালার</label>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input type="color" id="cfgPrimaryColor" style="width:60px;height:40px;padding:2px;">
+      <input type="text" id="cfgPrimaryColorHex" placeholder="#2b6df6" style="max-width:140px;">
+    </div>
+
+    <label class="mt-16">লোগো</label>
+    <div style="display:flex;gap:14px;align-items:center;">
+      <img id="logoPreview" src="" alt="logo" style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
+      <input type="file" id="logoFile" accept="image/*">
+    </div>
+    <div id="logoUploadProgress" class="muted" style="font-size:12px;"></div>
+
+    <button class="btn btn-primary mt-16" onclick="saveSiteContent()">সেভ করুন</button>
+    <div id="siteContentAlert" class="mt-16"></div>
+  </div>
+
+  <div id="questions" class="section card">
+    <h3>নতুন প্রশ্ন যোগ করুন</h3>
+    <label>প্রশ্ন</label>
+    <input type="text" id="qText" placeholder="প্রশ্নটি লিখুন">
+
+    <label>উত্তরের ধরন</label>
+    <select id="qAnswerType" onchange="toggleAnswerType()">
+      <option value="options">অপশন থেকে বাছাই (Multiple Choice)</option>
+      <option value="text">নিজে লিখে/পেস্ট করে উত্তর দিবে (Text Answer)</option>
+    </select>
+
+    <div id="optionFields">
+      <label>অপশন ১</label>
+      <input type="text" id="qOpt1">
+      <label>অপশন ২</label>
+      <input type="text" id="qOpt2">
+      <label>অপশন ৩</label>
+      <input type="text" id="qOpt3">
+      <label>অপশন ৪</label>
+      <input type="text" id="qOpt4">
+      <label>সঠিক উত্তর</label>
+      <select id="qCorrect">
+        <option value="0">অপশন ১</option>
+        <option value="1">অপশন ২</option>
+        <option value="2">অপশন ৩</option>
+        <option value="3">অপশন ৪</option>
+      </select>
+    </div>
+
+    <div id="textFields" class="hidden">
+      <label>প্রত্যাশিত/নমুনা উত্তর (ঐচ্ছিক — শুধু আপনার রেফারেন্সের জন্য, ইউজার দেখবে না)</label>
+      <textarea id="qExpectedText" rows="2" placeholder="যেমন: সঠিক লিংক বা টেক্সট যা মিলিয়ে দেখবেন"></textarea>
+      <p class="muted" style="font-size:12px;">এই ধরনের প্রশ্নে ইউজার নিজে টাইপ বা পেস্ট করে উত্তর জমা দেবে। উত্তর automatic চেক হবে না — Submissions ট্যাব থেকে আপনাকে ম্যানুয়ালি দেখে Approve/Reject করতে হবে।</p>
+    </div>
+
+    <label class="mt-16">রিওয়ার্ড (৳, ঐচ্ছিক — খালি রাখলে সার্ভে রেট ব্যবহার হবে)</label>
+    <input type="number" id="qReward" step="0.01">
+    <button class="btn btn-primary mt-16" onclick="addQuestion()">যোগ করুন</button>
+    <div id="questionsAlert" class="mt-16"></div>
+
+    <h3 class="mt-16">সব প্রশ্ন</h3>
+    <table>
+      <thead><tr><th>প্রশ্ন</th><th>ধরন</th><th>সঠিক উত্তর</th><th>রিওয়ার্ড</th><th>অ্যাকশন</th></tr></thead>
+      <tbody id="questionsBody"><tr><td colspan="5" class="muted center">লোড হচ্ছে...</td></tr></tbody>
+    </table>
+  </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script>
   // ================================================================
@@ -91,7 +173,7 @@
   // verification happens on Firebase's server (signInWithEmailAndPassword)
   // plus the Firestore "admins" collection check below — neither can
   // be bypassed by viewing the page source.
-  const ADMIN_EMAIL = "amarlifeamarshob@gmail.com";
+  const ADMIN_EMAIL = "gojolsong@gmail.com";
 
   function showSection(id, btn){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -118,6 +200,8 @@
         loadSubmissions();
         loadWithdrawals();
         loadRates();
+        loadSiteContent();
+        loadQuestions();
       } else {
         auth.signOut();
         alertBox.innerHTML = '<div class="alert alert-error">ভুল কোড</div>';
@@ -237,6 +321,166 @@
     db.collection("settings").doc("rates").set(rates).then(()=>{
       document.getElementById('ratesAlert').innerHTML = '<div class="alert alert-success">রেট সেভ হয়েছে</div>';
     });
+  }
+
+  // ================= Site Content (text, notice, color, logo) =================
+  let pendingLogoFile = null;
+  let currentLogoUrl = "";
+
+  document.getElementById('cfgPrimaryColor').addEventListener('input', function(){
+    document.getElementById('cfgPrimaryColorHex').value = this.value;
+  });
+  document.getElementById('cfgPrimaryColorHex').addEventListener('input', function(){
+    if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('cfgPrimaryColor').value = this.value;
+  });
+  document.getElementById('logoFile').addEventListener('change', function(){
+    pendingLogoFile = this.files[0] || null;
+    if(pendingLogoFile){
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const img = document.getElementById('logoPreview');
+        img.src = e.target.result;
+        img.style.display = 'inline-block';
+      };
+      reader.readAsDataURL(pendingLogoFile);
+    }
+  });
+
+  function loadSiteContent(){
+    db.collection("settings").doc("siteContent").get().then(doc=>{
+      const c = doc.exists ? doc.data() : {};
+      document.getElementById('cfgSiteName').value = c.siteName || "";
+      document.getElementById('cfgHeroTitle').value = c.heroTitle || "";
+      document.getElementById('cfgHeroSubtitle').value = c.heroSubtitle || "";
+      document.getElementById('cfgNotice').value = c.notice || "";
+      const color = c.primaryColor || "#2b6df6";
+      document.getElementById('cfgPrimaryColor').value = color;
+      document.getElementById('cfgPrimaryColorHex').value = color;
+      currentLogoUrl = c.logoUrl || "";
+      if(currentLogoUrl){
+        const img = document.getElementById('logoPreview');
+        img.src = currentLogoUrl;
+        img.style.display = 'inline-block';
+      }
+    });
+  }
+
+  function saveSiteContent(){
+    const alertBox = document.getElementById('siteContentAlert');
+    const progress = document.getElementById('logoUploadProgress');
+    alertBox.innerHTML = "";
+
+    const baseData = {
+      siteName: document.getElementById('cfgSiteName').value.trim(),
+      heroTitle: document.getElementById('cfgHeroTitle').value.trim(),
+      heroSubtitle: document.getElementById('cfgHeroSubtitle').value.trim(),
+      notice: document.getElementById('cfgNotice').value.trim(),
+      primaryColor: document.getElementById('cfgPrimaryColorHex').value.trim() || "#2b6df6",
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    function finalSave(logoUrl){
+      baseData.logoUrl = logoUrl || currentLogoUrl || "";
+      db.collection("settings").doc("siteContent").set(baseData, { merge: true }).then(()=>{
+        alertBox.innerHTML = '<div class="alert alert-success">কনটেন্ট সেভ হয়েছে</div>';
+        progress.textContent = "";
+      }).catch(err=>{
+        alertBox.innerHTML = '<div class="alert alert-error">সেভ ব্যর্থ হয়েছে: ' + err.message + '</div>';
+      });
+    }
+
+    if(pendingLogoFile){
+      progress.textContent = "লোগো আপলোড হচ্ছে...";
+      const ref = storage.ref("logos/" + Date.now() + "_" + pendingLogoFile.name);
+      ref.put(pendingLogoFile).then(snap=>snap.ref.getDownloadURL()).then(url=>{
+        pendingLogoFile = null;
+        finalSave(url);
+      }).catch(err=>{
+        progress.textContent = "";
+        alertBox.innerHTML = '<div class="alert alert-error">লোগো আপলোড ব্যর্থ: ' + err.message + '</div>';
+      });
+    } else {
+      finalSave(null);
+    }
+  }
+
+  // ================= Questions (survey Q&A) =================
+  function toggleAnswerType(){
+    const type = document.getElementById('qAnswerType').value;
+    document.getElementById('optionFields').classList.toggle('hidden', type !== 'options');
+    document.getElementById('textFields').classList.toggle('hidden', type !== 'text');
+  }
+
+  function loadQuestions(){
+    db.collection("questions").orderBy("createdAt","desc").get().then(snap=>{
+      const body = document.getElementById('questionsBody');
+      if(snap.empty){ body.innerHTML = '<tr><td colspan="5" class="muted center">কোনো প্রশ্ন নেই</td></tr>'; return; }
+      body.innerHTML = "";
+      snap.forEach(doc=>{
+        const d = doc.data();
+        const isText = d.answerType === 'text';
+        const typeLabel = isText ? 'টেক্সট (ম্যানুয়াল)' : 'অপশন';
+        const correctText = isText ? (d.expectedText || '—') : ((d.options && d.options[d.correctIndex]) || "-");
+        body.innerHTML += `<tr>
+          <td>${d.question}</td>
+          <td>${typeLabel}</td>
+          <td>${correctText}</td>
+          <td>${d.reward ? '৳'+Number(d.reward).toFixed(2) : 'ডিফল্ট'}</td>
+          <td><button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="deleteQuestion('${doc.id}')">Delete</button></td>
+        </tr>`;
+      });
+    });
+  }
+
+  function addQuestion(){
+    const alertBox = document.getElementById('questionsAlert');
+    const question = document.getElementById('qText').value.trim();
+    const answerType = document.getElementById('qAnswerType').value;
+    const rewardRaw = document.getElementById('qReward').value;
+    const reward = rewardRaw ? parseFloat(rewardRaw) : null;
+
+    if(!question){
+      alertBox.innerHTML = '<div class="alert alert-error">প্রশ্ন লিখুন</div>';
+      return;
+    }
+
+    const data = {
+      question, answerType, reward,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if(answerType === 'text'){
+      data.expectedText = document.getElementById('qExpectedText').value.trim();
+    } else {
+      const options = [
+        document.getElementById('qOpt1').value.trim(),
+        document.getElementById('qOpt2').value.trim(),
+        document.getElementById('qOpt3').value.trim(),
+        document.getElementById('qOpt4').value.trim()
+      ];
+      if(options.some(o=>!o)){
+        alertBox.innerHTML = '<div class="alert alert-error">সবগুলো অপশন পূরণ করুন</div>';
+        return;
+      }
+      data.options = options;
+      data.correctIndex = parseInt(document.getElementById('qCorrect').value, 10);
+    }
+
+    db.collection("questions").add(data).then(()=>{
+      alertBox.innerHTML = '<div class="alert alert-success">প্রশ্ন যোগ হয়েছে</div>';
+      document.getElementById('qText').value = "";
+      document.getElementById('qOpt1').value = "";
+      document.getElementById('qOpt2').value = "";
+      document.getElementById('qOpt3').value = "";
+      document.getElementById('qOpt4').value = "";
+      document.getElementById('qExpectedText').value = "";
+      document.getElementById('qReward').value = "";
+      loadQuestions();
+    });
+  }
+
+  function deleteQuestion(id){
+    db.collection("questions").doc(id).delete().then(loadQuestions);
   }
 </script>
 </body>
