@@ -1,42 +1,8 @@
-// ==========================================================
-// STEP 1: Go to https://console.firebase.google.com
-// Create a free project → Add a Web App → copy the config below
-// STEP 2: Enable "Authentication" → Email/Password sign-in method
-// STEP 3: Enable "Firestore Database" → Start in production mode
-// ==========================================================
-
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXX",
+  authDomain: "bd-rocket-income.firebaseapp.com",
+  projectId: "bd-rocket-income",
+  storageBucket: "bd-rocket-income.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
 };
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// ---------- Firestore structure (auto-created on first write) ----------
-// users/{uid}: {
-//   name, phone, email, referredBy, refCode,
-//   balance: number,
-//   activationStatus: "pending" | "approved" | "rejected",
-//   activationTrxId: string,
-//   createdAt
-// }
-//
-// tasks/{taskId}: { type: "ad"|"survey"|"microjob", title, rate, status }
-//
-// submissions/{id}: {
-//   uid, taskId, type, proof, status: "pending"|"approved"|"rejected",
-//   amount, createdAt
-// }
-//
-// withdrawals/{id}: {
-//   uid, amount, fee, netAmount, method, accountNumber,
-//   status: "pending"|"approved"|"rejected", createdAt
-// }
-//
-// settings/rates: { ad: 0, survey: 0, microjob: 0, referral: 0 }
