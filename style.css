@@ -1,0 +1,256 @@
+:root{
+  --navy:#0b1f4d;
+  --blue:#1d4fd8;
+  --blue-dark:#153aa6;
+  --gold:#f2b705;
+  --gold-light:#ffd966;
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --text:#12203c;
+  --muted:#65728a;
+  --danger:#c0392b;
+  --success:#1f8a4c;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Segoe UI', Roboto, 'Noto Sans Bengali', sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  padding-bottom:70px;
+}
+a{color:inherit;text-decoration:none;}
+
+/* ---------- Top header ---------- */
+.topbar{
+  background:linear-gradient(120deg, var(--navy), var(--blue));
+  color:#fff;
+  padding:16px 18px 46px;
+  border-bottom-left-radius:26px;
+  border-bottom-right-radius:26px;
+  position:relative;
+}
+.topbar-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.topbar-row .brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  font-size:16px;
+  letter-spacing:0.3px;
+}
+.topbar-row .brand img{
+  width:34px;height:34px;border-radius:9px;object-fit:cover;
+}
+.icon-btn{
+  width:38px;height:38px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  border:none;
+  color:#fff;
+}
+
+.welcome-card{
+  margin-top:18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.welcome-left{display:flex;align-items:center;gap:12px;}
+.avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:#e7ecf7;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--navy);font-size:22px;font-weight:800;
+}
+.welcome-left small{opacity:0.85;font-size:12px;letter-spacing:0.4px;}
+.welcome-left h2{margin:2px 0 0;font-size:19px;}
+
+.wallet-pill{
+  background:linear-gradient(120deg, var(--gold), var(--gold-light));
+  color:var(--navy);
+  padding:10px 16px;
+  border-radius:12px;
+  font-weight:800;
+  font-size:15px;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* ---------- Container ---------- */
+.container{
+  max-width:520px;
+  margin:-26px auto 0;
+  padding:0 16px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:0 10px 24px rgba(11,31,77,0.08);
+  margin-bottom:16px;
+}
+
+.notice{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#fff;
+  border-radius:12px;
+  padding:10px 14px;
+  font-size:13px;
+  color:var(--text);
+  box-shadow:0 8px 18px rgba(11,31,77,0.06);
+  margin-bottom:16px;
+}
+.notice .tag{
+  background:var(--blue);
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  padding:4px 8px;
+  border-radius:6px;
+  flex-shrink:0;
+}
+
+/* ---------- Section heading ---------- */
+.section-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:800;
+  font-size:16px;
+  margin-bottom:14px;
+}
+
+/* ---------- Task grid ---------- */
+.grid4{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  text-align:center;
+}
+.grid-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  font-size:11.5px;
+  color:var(--text);
+  position:relative;
+}
+.grid-item .ic{
+  width:52px;height:52px;
+  border-radius:14px;
+  background:#eef1fa;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  padding:13px;
+  border-radius:11px;
+  border:none;
+  font-weight:700;
+  font-size:14.5px;
+  cursor:pointer;
+}
+.btn-primary{background:linear-gradient(90deg, var(--blue), var(--blue-dark));color:#fff;}
+.btn-gold{background:linear-gradient(90deg, var(--gold), var(--gold-light));color:var(--navy);}
+.btn-outline{background:#eef1fa;color:var(--navy);}
+.btn-danger{background:#fdecec;color:var(--danger);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+/* ---------- Forms ---------- */
+label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:var(--text);}
+input, select, textarea{
+  width:100%;
+  padding:12px 13px;
+  border-radius:10px;
+  border:1.5px solid #e3e7f0;
+  font-size:14px;
+  margin-bottom:14px;
+  background:#fafbfd;
+  outline:none;
+}
+input:focus, select:focus, textarea:focus{border-color:var(--blue);background:#fff;}
+
+.field-note{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:-8px;
+  margin-bottom:14px;
+}
+
+/* ---------- Badges ---------- */
+.badge{
+  display:inline-block;
+  font-size:12px;
+  font-weight:700;
+  padding:5px 11px;
+  border-radius:20px;
+}
+.badge-blue{background:#e6ecfd;color:var(--blue-dark);}
+.badge-gold{background:#fff3cf;color:#8a6600;}
+.badge-pending{background:#fff3cf;color:#8a6600;}
+.badge-approved{background:#e3f6ea;color:var(--success);}
+.badge-rejected{background:#fdecec;color:var(--danger);}
+
+/* ---------- Bottom nav ---------- */
+.bottom-nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#fff;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  padding:8px 0 10px;
+  box-shadow:0 -6px 18px rgba(11,31,77,0.08);
+}
+.nav-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  font-size:11px;
+  color:var(--muted);
+}
+.nav-item.active{color:var(--blue);font-weight:700;}
+.nav-item .nav-ic{font-size:18px;}
+
+/* ---------- Misc ---------- */
+.row-between{display:flex;align-items:center;justify-content:space-between;}
+.muted{color:var(--muted);font-size:13px;}
+.center{text-align:center;}
+.mt-8{margin-top:8px;}
+.mt-16{margin-top:16px;}
+.hidden{display:none !important;}
+
+.alert{
+  padding:11px 13px;
+  border-radius:10px;
+  font-size:13px;
+  margin-bottom:14px;
+}
+.alert-error{background:#fdecec;color:var(--danger);}
+.alert-success{background:#e3f6ea;color:var(--success);}
+.alert-info{background:#e6ecfd;color:var(--blue-dark);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{padding:9px 8px;text-align:left;border-bottom:1px solid #eef1f6;}
+th{color:var(--muted);font-weight:700;font-size:12px;}
