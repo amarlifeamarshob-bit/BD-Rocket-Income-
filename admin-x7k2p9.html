@@ -219,6 +219,27 @@
 <div id="userModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;">
     <h3 id="umUserName">ইউজার</h3>
+
+    <label>ব্যালেন্স (৳)</label>
+    <input type="number" id="umBalance" step="0.01">
+
+    <label>ম্যানুয়াল এডিটের কারণ (ঐচ্ছিক, শুধু আপনার নিজের নোটের জন্য)</label>
+    <input type="text" id="umAdjustNote" placeholder="যেমন: বোনাস, ভুল সংশোধন ইত্যাদি">
+
+    <label>একটিভেশন স্ট্যাটাস</label>
+    <select id="umActivationStatus">
+      <option value="pending">pending</option>
+      <option value="approved">approved</option>
+      <option value="rejected">rejected</option>
+    </select>
+
+    <button class="btn btn-primary mt-16" onclick="saveUserBalanceStatus()">ব্যালেন্স/স্ট্যাটাস সেভ করুন</button>
+    <div id="umBalanceAlert" class="mt-16"></div>
+
+    <h4 class="mt-16">📜 ব্যালেন্স হিস্টরি</h4>
+    <div id="umHistory" class="muted" style="font-size:12px;max-height:160px;overflow-y:auto;">লোড হচ্ছে...</div>
+
+    <hr style="margin:18px 0;border:none;border-top:1px solid #eee;">
     <div id="umToggles"></div>
     <div id="umAlert" class="mt-16"></div>
     <button class="btn btn-primary mt-16" onclick="saveUserRestrictions()">এক্সেস সেভ করুন</button>
@@ -333,11 +354,17 @@
 
   function approveSubmission(subId, uid, amount){
     const userRef = db.collection("users").doc(uid);
+    const txRef = db.collection("transactions").doc();
     db.runTransaction(t=>{
       return t.get(userRef).then(doc=>{
         const newBalance = (doc.data().balance || 0) + amount;
         t.update(userRef, { balance: newBalance });
         t.update(db.collection("submissions").doc(subId), { status: "approved" });
+        t.set(txRef, {
+          uid: uid, type: "task_approved", amount: amount, balanceAfter: newBalance,
+          note: "টাস্ক সাবমিশন অনুমোদন", refId: subId,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
       });
     }).then(loadSubmissions);
   }
@@ -367,11 +394,17 @@
 
   function approveWithdrawal(wId, uid, amount){
     const userRef = db.collection("users").doc(uid);
+    const txRef = db.collection("transactions").doc();
     db.runTransaction(t=>{
       return t.get(userRef).then(doc=>{
         const newBalance = (doc.data().balance || 0) - amount;
         t.update(userRef, { balance: newBalance });
         t.update(db.collection("withdrawals").doc(wId), { status: "approved" });
+        t.set(txRef, {
+          uid: uid, type: "withdrawal_approved", amount: -amount, balanceAfter: newBalance,
+          note: "উইথড্র অনুমোদন", refId: wId,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
       });
     }).then(loadWithdrawals);
   }
@@ -678,6 +711,11 @@
     currentManagedUid = uid;
     const d = allUsersCache[uid] || {};
     document.getElementById('umUserName').textContent = 'ম্যানেজ করুন: ' + (d.name || uid);
+    document.getElementById('umBalance').value = (d.balance || 0).toFixed(2);
+    document.getElementById('umAdjustNote').value = "";
+    document.getElementById('umActivationStatus').value = d.activationStatus || 'pending';
+    document.getElementById('umBalanceAlert').innerHTML = "";
+    loadUserHistory(uid);
     const restrictions = d.restrictions || {};
     document.getElementById('umToggles').innerHTML = FEATURES.map(function(f){
       const r = restrictions[f.key] || { enabled: true, reason: "" };
@@ -695,6 +733,82 @@
     document.getElementById('umAlert').innerHTML = "";
     document.getElementById('umNoticeAlert').innerHTML = "";
     document.getElementById('userModal').classList.remove('hidden');
+  }
+
+  const TX_LABELS = {
+    task_approved: "✅ টাস্ক অনুমোদন",
+    withdrawal_approved: "💸 উইথড্র অনুমোদন",
+    admin_adjustment: "✏️ অ্যাডমিন ম্যানুয়াল এডিট"
+  };
+
+  function loadUserHistory(uid){
+    const box = document.getElementById('umHistory');
+    box.innerHTML = "লোড হচ্ছে...";
+    db.collection("transactions").where("uid","==",uid).orderBy("createdAt","desc").limit(20).get()
+      .then(function(snap){
+        if(snap.empty){ box.innerHTML = "কোনো হিস্টরি নেই"; return; }
+        let html = "";
+        snap.forEach(function(doc){
+          const d = doc.data();
+          const label = TX_LABELS[d.type] || d.type;
+          const sign = d.amount >= 0 ? "+" : "";
+          const color = d.amount >= 0 ? "#1a9c4c" : "#d9333f";
+          const when = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString('bn-BD') : "";
+          html += `<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
+            <b>${label}</b> — <span style="color:${color};">${sign}৳${Number(d.amount).toFixed(2)}</span>
+            (পরে ব্যালেন্স: ৳${Number(d.balanceAfter).toFixed(2)})<br>
+            <span class="muted">${d.note || ''} · ${when}</span>
+          </div>`;
+        });
+        box.innerHTML = html;
+      }).catch(function(err){
+        box.innerHTML = "হিস্টরি লোড করতে সমস্যা: " + err.message;
+      });
+  }
+
+  function saveUserBalanceStatus(){
+    if(!currentManagedUid) return;
+    const alertBox = document.getElementById('umBalanceAlert');
+    const balanceRaw = document.getElementById('umBalance').value;
+    const newBalance = parseFloat(balanceRaw);
+    const activationStatus = document.getElementById('umActivationStatus').value;
+    const note = document.getElementById('umAdjustNote').value.trim();
+
+    if(balanceRaw === "" || isNaN(newBalance) || newBalance < 0){
+      alertBox.innerHTML = '<div class="alert alert-error">সঠিক ব্যালেন্স দিন</div>';
+      return;
+    }
+
+    const uid = currentManagedUid;
+    const userRef = db.collection("users").doc(uid);
+    const txRef = db.collection("transactions").doc();
+
+    db.runTransaction(function(t){
+      return t.get(userRef).then(function(doc){
+        const oldBalance = doc.data().balance || 0;
+        const delta = newBalance - oldBalance;
+        t.update(userRef, { balance: newBalance, activationStatus: activationStatus });
+        if(delta !== 0){
+          t.set(txRef, {
+            uid: uid, type: "admin_adjustment", amount: delta, balanceAfter: newBalance,
+            note: note || "ম্যানুয়াল এডিট",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      });
+    }).then(function(){
+      alertBox.innerHTML = '<div class="alert alert-success">ব্যালেন্স ও স্ট্যাটাস সেভ হয়েছে</div>';
+      if(allUsersCache[uid]){
+        allUsersCache[uid].balance = newBalance;
+        allUsersCache[uid].activationStatus = activationStatus;
+      }
+      document.getElementById('umAdjustNote').value = "";
+      loadUsersTab();
+      loadActivations();
+      loadUserHistory(uid);
+    }).catch(function(err){
+      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
+    });
   }
 
   function toggleReasonField(key){
