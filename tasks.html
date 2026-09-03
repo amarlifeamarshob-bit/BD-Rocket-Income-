@@ -27,15 +27,11 @@
     <div id="alertBox"></div>
 
     <div id="adFields" class="hidden">
-      <label>বিজ্ঞাপন লিংক / স্ক্রিনশট লিংক</label>
-      <input type="text" id="adProof" placeholder="প্রমাণের লিংক পেস্ট করুন">
+      <div id="adFormBox"><p class="muted center">লোড হচ্ছে...</p></div>
     </div>
 
     <div id="surveyFields" class="hidden">
-      <label>সার্ভে আইডি</label>
-      <input type="text" id="surveyId" placeholder="সার্ভে আইডি">
-      <label>স্ক্রিনশট লিংক (Google Drive/Imgur)</label>
-      <input type="text" id="surveyProof" placeholder="প্রমাণের লিংক">
+      <div id="surveyQuestionBox"><p class="muted center">প্রশ্ন লোড হচ্ছে...</p></div>
     </div>
 
     <div id="microjobFields" class="hidden">
@@ -43,7 +39,7 @@
       <textarea id="microjobText" rows="4" placeholder="যেমন: সম্পন্ন করা ডেটা এন্ট্রি/টাইপিং কাজের বিবরণ লিখুন"></textarea>
     </div>
 
-    <button class="btn btn-primary" onclick="submitTask()">সাবমিট করুন</button>
+    <button class="btn btn-primary" id="submitTaskBtn" onclick="submitTask()">সাবমিট করুন</button>
   </div>
 
   <div class="card">
@@ -103,9 +99,84 @@
       const rates = doc.exists ? doc.data() : {};
       currentRate = rates[taskType] || 0;
       document.getElementById('taskRate').textContent = "Rate: ৳" + currentRate.toFixed(2);
+      if(taskType === "survey") loadSurveyQuestion(profile.uid);
+      if(taskType === "ad") loadAdForm();
     });
     loadHistory(profile.uid);
   });
+
+  let currentAdLabels = [];
+
+  function loadAdForm(){
+    const box = document.getElementById('adFormBox');
+    db.collection("settings").doc("adForm").get().then(function(doc){
+      const d = doc.exists ? doc.data() : {};
+      currentAdLabels = (d.labels && d.labels.length === 3) ? d.labels
+        : ["বিজ্ঞাপন লিংক", "স্ক্রিনশট লিংক", "সময়"];
+      box.innerHTML = currentAdLabels.map(function(label, i){
+        return '<label>' + label + '</label>' +
+          '<input type="text" id="adField' + i + '" placeholder="' + label + '">';
+      }).join('');
+    }).catch(function(){
+      currentAdLabels = ["বিজ্ঞাপন লিংক", "স্ক্রিনশট লিংক", "সময়"];
+      box.innerHTML = currentAdLabels.map(function(label, i){
+        return '<label>' + label + '</label>' +
+          '<input type="text" id="adField' + i + '" placeholder="' + label + '">';
+      }).join('');
+    });
+  }
+
+  let currentQuestion = null;
+
+  function loadSurveyQuestion(uid){
+    const box = document.getElementById('surveyQuestionBox');
+    box.innerHTML = '<p class="muted center">প্রশ্ন লোড হচ্ছে...</p>';
+    Promise.all([
+      db.collection("questions").orderBy("createdAt","desc").get(),
+      db.collection("submissions").where("uid","==",uid).where("type","==","survey").get()
+    ]).then(function(results){
+      const qSnap = results[0];
+      const subSnap = results[1];
+      const answeredIds = new Set();
+      subSnap.forEach(function(doc){
+        const p = doc.data().proof;
+        if(p && p.questionId) answeredIds.add(p.questionId);
+      });
+      const remaining = [];
+      qSnap.forEach(function(doc){
+        if(!answeredIds.has(doc.id)) remaining.push(Object.assign({ id: doc.id }, doc.data()));
+      });
+      if(remaining.length === 0){
+        currentQuestion = null;
+        box.innerHTML = '<p class="muted center">✅ আপাতত নতুন কোনো প্রশ্ন নেই — পরে আবার চেষ্টা করুন</p>';
+        document.getElementById('submitTaskBtn').style.display = 'none';
+        return;
+      }
+      const q = remaining[Math.floor(Math.random() * remaining.length)];
+      currentQuestion = q;
+      document.getElementById('submitTaskBtn').style.display = '';
+      renderSurveyQuestion(q);
+    }).catch(function(err){
+      box.innerHTML = '<p class="muted center">প্রশ্ন লোড করতে সমস্যা হয়েছে: ' + err.message + '</p>';
+    });
+  }
+
+  function renderSurveyQuestion(q){
+    const box = document.getElementById('surveyQuestionBox');
+    const reward = (q.reward != null && q.reward !== "") ? q.reward : currentRate;
+    document.getElementById('taskRate').textContent = "Rate: ৳" + Number(reward).toFixed(2);
+    if(q.answerType === "text"){
+      box.innerHTML =
+        '<label>' + q.question + '</label>' +
+        '<textarea id="surveyAnswerText" rows="3" placeholder="আপনার উত্তর লিখুন/পেস্ট করুন"></textarea>';
+    } else {
+      const opts = q.options || [];
+      box.innerHTML = '<label>' + q.question + '</label>' + opts.map(function(opt, i){
+        return '<label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:8px;">' +
+          '<input type="radio" name="surveyOpt" value="' + i + '" style="width:auto;">' + opt + '</label>';
+      }).join('');
+    }
+  }
 
   function loadHistory(uid){
     db.collection("submissions").where("uid","==",uid).where("type","==",taskType)
@@ -130,25 +201,52 @@
     const alertBox = document.getElementById('alertBox');
     alertBox.innerHTML = "";
     let proofFields = {};
+    let rewardAmount = currentRate;
 
     if(taskType === "ad"){
-      const v = document.getElementById('adProof').value.trim();
-      if(!v){ alertBox.innerHTML = '<div class="alert alert-error">প্রমাণের লিংক দিন</div>'; return; }
-      proofFields = { link: v };
+      const values = [];
+      for(let i = 0; i < currentAdLabels.length; i++){
+        const v = document.getElementById('adField' + i).value.trim();
+        if(!v){ alertBox.innerHTML = '<div class="alert alert-error">সব ঘর পূরণ করুন</div>'; return; }
+        values.push(v);
+      }
+      proofFields = {
+        fields: currentAdLabels.map(function(label, i){ return { label: label, value: values[i] }; })
+      };
     } else if(taskType === "survey"){
-      const id = document.getElementById('surveyId').value.trim();
-      const link = document.getElementById('surveyProof').value.trim();
-      if(!id || !link){ alertBox.innerHTML = '<div class="alert alert-error">সব ঘর পূরণ করুন</div>'; return; }
-      proofFields = { surveyId: id, link: link };
+      if(!currentQuestion){
+        alertBox.innerHTML = '<div class="alert alert-error">এই মুহূর্তে কোনো প্রশ্ন নেই</div>';
+        return;
+      }
+      rewardAmount = (currentQuestion.reward != null && currentQuestion.reward !== "") ? currentQuestion.reward : currentRate;
+      if(currentQuestion.answerType === "text"){
+        const text = document.getElementById('surveyAnswerText').value.trim();
+        if(!text){ alertBox.innerHTML = '<div class="alert alert-error">উত্তর লিখুন</div>'; return; }
+        proofFields = {
+          questionId: currentQuestion.id, question: currentQuestion.question,
+          answerType: "text", answerText: text
+        };
+      } else {
+        const checked = document.querySelector('input[name="surveyOpt"]:checked');
+        if(!checked){ alertBox.innerHTML = '<div class="alert alert-error">একটা অপশন বাছাই করুন</div>'; return; }
+        const idx = parseInt(checked.value, 10);
+        proofFields = {
+          questionId: currentQuestion.id, question: currentQuestion.question,
+          answerType: "options", selectedIndex: idx, selectedOption: currentQuestion.options[idx],
+          isCorrect: idx === currentQuestion.correctIndex
+        };
+      }
     } else {
       const text = document.getElementById('microjobText').value.trim();
       if(!text){ alertBox.innerHTML = '<div class="alert alert-error">কাজের বিবরণ লিখুন</div>'; return; }
       proofFields = { description: text };
     }
 
-    submitTaskProof({ uid: currentUid, type: taskType, rate: currentRate, proofFields }).then(()=>{
+    submitTaskProof({ uid: currentUid, type: taskType, rate: rewardAmount, proofFields }).then(()=>{
       alertBox.innerHTML = '<div class="alert alert-success">সাবমিট হয়েছে — অ্যাডমিন অনুমোদনের পর টাকা যোগ হবে</div>';
       loadHistory(currentUid);
+      if(taskType === "survey") loadSurveyQuestion(currentUid);
+      if(taskType === "ad") loadAdForm();
     }).catch(err=>{
       alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
     });

@@ -36,6 +36,7 @@
     <button onclick="showSection('withdrawals',this)">Withdrawals</button>
     <button onclick="showSection('rates',this)">Rates</button>
     <button onclick="showSection('siteContent',this)">Site Content</button>
+    <button onclick="showSection('adFormFields',this)">Ad ফর্ম</button>
     <button onclick="showSection('questions',this)">Questions</button>
     <button onclick="showSection('users',this)">ইউজার</button>
   </div>
@@ -164,6 +165,23 @@
 
     <button class="btn btn-primary mt-16" onclick="saveSiteContent()">সেভ করুন</button>
     <div id="siteContentAlert" class="mt-16"></div>
+  </div>
+
+  <div id="adFormFields" class="section card">
+    <h3>📺 Ad ভিউ টাস্কের ফর্ম</h3>
+    <p class="muted" style="font-size:12px;">Ad ভিউ টাস্কে ইউজারকে যে ৩টা ঘর পূরণ করতে হবে, তার লেবেল এখান থেকে বসান। ইউজার প্রতিবার নিজে সব ঘরে টাইপ করে জমা দেবে।</p>
+
+    <label>ঘর ১ এর লেবেল</label>
+    <input type="text" id="adLabel1" placeholder="যেমন: বিজ্ঞাপন লিংক">
+
+    <label>ঘর ২ এর লেবেল</label>
+    <input type="text" id="adLabel2" placeholder="যেমন: স্ক্রিনশট লিংক">
+
+    <label>ঘর ৩ এর লেবেল</label>
+    <input type="text" id="adLabel3" placeholder="যেমন: সময় (কতক্ষণ দেখলেন)">
+
+    <button class="btn btn-primary mt-16" onclick="saveAdFormFields()">সেভ করুন</button>
+    <div id="adFormFieldsAlert" class="mt-16"></div>
   </div>
 
   <div id="questions" class="section card">
@@ -312,6 +330,7 @@
         loadWithdrawals();
         loadRates();
         loadSiteContent();
+        loadAdFormFields();
         loadQuestions();
         loadUsersTab();
         auth.signOut();
@@ -352,7 +371,7 @@
       snap.forEach(doc=>{
         const d = doc.data();
         body.innerHTML += `<tr>
-          <td>${d.type}</td><td>৳${(d.amount||0).toFixed(2)}</td><td>${JSON.stringify(d.proof)}</td>
+          <td>${d.type}</td><td>৳${(d.amount||0).toFixed(2)}</td><td>${formatProof(d)}</td>
           <td><span class="badge badge-pending">pending</span></td>
           <td>
             <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:12px;" onclick="approveSubmission('${doc.id}','${d.uid}',${d.amount})">Approve</button>
@@ -449,6 +468,35 @@
     };
     db.collection("settings").doc("rates").set(rates).then(()=>{
       document.getElementById('ratesAlert').innerHTML = '<div class="alert alert-success">রেট সেভ হয়েছে</div>';
+    });
+  }
+
+  // ================= Ad ভিউ ফর্ম লেবেল =================
+  function loadAdFormFields(){
+    db.collection("settings").doc("adForm").get().then(function(doc){
+      const d = doc.exists ? doc.data() : {};
+      const labels = d.labels || [];
+      document.getElementById('adLabel1').value = labels[0] || "";
+      document.getElementById('adLabel2').value = labels[1] || "";
+      document.getElementById('adLabel3').value = labels[2] || "";
+    });
+  }
+
+  function saveAdFormFields(){
+    const alertBox = document.getElementById('adFormFieldsAlert');
+    const labels = [
+      document.getElementById('adLabel1').value.trim(),
+      document.getElementById('adLabel2').value.trim(),
+      document.getElementById('adLabel3').value.trim()
+    ];
+    if(labels.some(l=>!l)){
+      alertBox.innerHTML = '<div class="alert alert-error">৩টা ঘরই পূরণ করুন</div>';
+      return;
+    }
+    db.collection("settings").doc("adForm").set({ labels: labels }).then(function(){
+      alertBox.innerHTML = '<div class="alert alert-success">সেভ হয়েছে</div>';
+    }).catch(function(err){
+      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
     });
   }
 
@@ -818,6 +866,19 @@
   function formatProof(d){
     if(d.proof){
       if(typeof d.proof === 'string') return d.proof;
+      if(d.proof.fields && Array.isArray(d.proof.fields)){
+        return d.proof.fields.map(function(f){ return '<b>' + f.label + ':</b> ' + f.value; }).join('<br>');
+      }
+      if(d.proof.questionId){
+        let out = '<b>প্রশ্ন:</b> ' + (d.proof.question || '-') + '<br>';
+        if(d.proof.answerType === 'text'){
+          out += '<b>উত্তর:</b> ' + (d.proof.answerText || '-');
+        } else {
+          const mark = d.proof.isCorrect ? '<span style="color:#1a9c4c;">✅ সঠিক</span>' : '<span style="color:#d9333f;">❌ ভুল</span>';
+          out += '<b>বাছাই করা উত্তর:</b> ' + (d.proof.selectedOption || '-') + ' — ' + mark;
+        }
+        return out;
+      }
       if(d.proof.link) return `<a href="${d.proof.link}" target="_blank" rel="noopener">লিংক দেখুন</a>`;
       if(d.proof.text) return d.proof.text;
       return JSON.stringify(d.proof);
