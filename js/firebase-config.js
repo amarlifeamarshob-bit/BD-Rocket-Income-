@@ -1,6 +1,5 @@
 // ==========================================================
-// BD Rocket Income - Firebase Configuration
-// Project: bd-rocket-income
+// BD Rocket Income - Firebase config (ready to use)
 // ==========================================================
 
 const firebaseConfig = {
@@ -16,7 +15,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 // ---------- Firestore structure (auto-created on first write) ----------
 // users/{uid}: {

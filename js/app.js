@@ -88,68 +88,6 @@ function requestWithdraw({uid, amount, method, accountNumber}){
   });
 }
 
-// ================= Site content (admin-editable text/notice/color/logo) =================
-// Call this on any page (index.html, dashboard.html, etc.) to pull whatever
-// the admin has set and apply it automatically.
-function loadSiteContent(callback){
-  db.collection("settings").doc("siteContent").get().then(function(doc){
-    const c = doc.exists ? doc.data() : {};
-
-    // Apply theme color as a CSS variable so existing var(--blue) etc. can
-    // be pointed at it, or use var(--primary) directly in your CSS.
-    if(c.primaryColor){
-      document.documentElement.style.setProperty('--primary', c.primaryColor);
-    }
-
-    // Any element with data-site="siteName" / "heroTitle" / "heroSubtitle"
-    // gets its text filled in automatically.
-    if(c.siteName) document.querySelectorAll('[data-site="siteName"]').forEach(el=>el.textContent = c.siteName);
-    if(c.heroTitle) document.querySelectorAll('[data-site="heroTitle"]').forEach(el=>el.textContent = c.heroTitle);
-    if(c.heroSubtitle) document.querySelectorAll('[data-site="heroSubtitle"]').forEach(el=>el.textContent = c.heroSubtitle);
-
-    // Notice banner: only overwrite if admin has actually written something,
-    // otherwise leave the page's default fallback text in place.
-    if(c.notice){
-      document.querySelectorAll('[data-site="notice"]').forEach(el=>el.textContent = c.notice);
-    }
-
-    // Logo: any <img data-site="logo"> gets its src set.
-    if(c.logoUrl) document.querySelectorAll('img[data-site="logo"]').forEach(img=>img.src = c.logoUrl);
-
-    // Task cards on dashboard.html: admin-editable icon + label + link.
-    // Looks for a container with id="taskCardsGrid". If admin hasn't saved
-    // any custom cards yet, the page's own hardcoded default cards stay as-is.
-    if(c.taskCards && Array.isArray(c.taskCards) && c.taskCards.length){
-      const grid = document.getElementById('taskCardsGrid');
-      if(grid){
-        grid.innerHTML = "";
-        c.taskCards.forEach(function(t){
-          const a = document.createElement('a');
-          a.className = "grid-item";
-          a.href = t.link || "#";
-          const isImage = t.icon && /^https?:\/\//.test(t.icon);
-          const iconInner = isImage
-            ? '<img src="' + t.icon + '" style="width:28px;height:28px;object-fit:contain;">'
-            : (t.icon || "");
-          a.innerHTML = '<div class="ic">' + iconInner + '</div>' + (t.label || "");
-          grid.appendChild(a);
-        });
-      }
-    }
-
-    if(typeof callback === "function") callback(c);
-  });
-}
-
-// ================= Quiz / survey questions (admin-editable) =================
-function loadQuestions(callback){
-  db.collection("questions").orderBy("createdAt","desc").get().then(function(snap){
-    const list = [];
-    snap.forEach(doc=>list.push({ id: doc.id, ...doc.data() }));
-    if(typeof callback === "function") callback(list);
-  });
-}
-
 // ================= Load current user's data into dashboard =================
 function loadUserProfile(callback){
   auth.onAuthStateChanged(function(user){
@@ -161,16 +99,3 @@ function loadUserProfile(callback){
     });
   });
 }
-
-// ================= Special per-user notices (admin-sent, bell icon) =================
-function loadNotifications(uid, callback){
-  db.collection("notifications").where("uid","==",uid).orderBy("createdAt","desc").limit(20).get().then(function(snap){
-    const list = [];
-    snap.forEach(doc=>list.push({ id: doc.id, ...doc.data() }));
-    if(typeof callback === "function") callback(list);
-  });
-}
-
-function markNotificationRead(id){
-  return db.collection("notifications").doc(id).update({ read: true });
-      }
