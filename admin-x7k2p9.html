@@ -102,6 +102,14 @@
     </div>
     <div id="logoUploadProgress" class="muted" style="font-size:12px;"></div>
 
+    <label class="mt-16">একটিভেশন পেজের bKash QR ছবি</label>
+    <p class="muted" style="font-size:12px;margin-top:0;">অ্যাকাউন্ট খোলার পর activate.html পেজে এই ছবিটা দেখানো হয়</p>
+    <div style="display:flex;gap:14px;align-items:center;">
+      <img id="activationQrPreview" src="" alt="activation qr" style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
+      <input type="file" id="activationQrFile" accept="image/*">
+    </div>
+    <div id="activationQrUploadProgress" class="muted" style="font-size:12px;"></div>
+
     <h3 class="mt-16">🚀 হোমপেজের টাস্ক কার্ড (আইকন ও নাম)</h3>
     <p class="muted" style="font-size:12px;">প্রতিটার জন্য ছবি আপলোড করো (ফোন থেকে সরাসরি বাছাই করা যাবে)। ছবি না দিলে ইমোজি লিখলেও চলবে।</p>
 
@@ -239,6 +247,9 @@
     <h4 class="mt-16">📜 ব্যালেন্স হিস্টরি</h4>
     <div id="umHistory" class="muted" style="font-size:12px;max-height:160px;overflow-y:auto;">লোড হচ্ছে...</div>
 
+    <h4 class="mt-16">🗂️ টাস্ক সাবমিশন (উত্তরসহ)</h4>
+    <div id="umSubmissions" class="muted" style="font-size:12px;max-height:220px;overflow-y:auto;">লোড হচ্ছে...</div>
+
     <hr style="margin:18px 0;border:none;border-top:1px solid #eee;">
     <div id="umToggles"></div>
     <div id="umAlert" class="mt-16"></div>
@@ -345,7 +356,7 @@
           <td><span class="badge badge-pending">pending</span></td>
           <td>
             <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:12px;" onclick="approveSubmission('${doc.id}','${d.uid}',${d.amount})">Approve</button>
-            <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="rejectSubmission('${doc.id}')">Reject</button>
+            <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="rejectSubmission('${doc.id}','${d.uid}')">Reject</button>
           </td>
         </tr>`;
       });
@@ -366,11 +377,17 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       });
-    }).then(loadSubmissions);
+    }).then(function(){
+      loadSubmissions();
+      if(currentManagedUid === uid){ loadUserSubmissions(uid); loadUserHistory(uid); }
+    });
   }
 
-  function rejectSubmission(subId){
-    db.collection("submissions").doc(subId).update({ status: "rejected" }).then(loadSubmissions);
+  function rejectSubmission(subId, uid){
+    db.collection("submissions").doc(subId).update({ status: "rejected" }).then(function(){
+      loadSubmissions();
+      if(uid && currentManagedUid === uid){ loadUserSubmissions(uid); }
+    });
   }
 
   function loadWithdrawals(){
@@ -458,6 +475,21 @@
     }
   });
 
+  let pendingActivationQrFile = null;
+  let currentActivationQrUrl = "";
+  document.getElementById('activationQrFile').addEventListener('change', function(){
+    pendingActivationQrFile = this.files[0] || null;
+    if(pendingActivationQrFile){
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const img = document.getElementById('activationQrPreview');
+        img.src = e.target.result;
+        img.style.display = 'inline-block';
+      };
+      reader.readAsDataURL(pendingActivationQrFile);
+    }
+  });
+
   // ---- Task card icon uploads ----
   let pendingTaskIconFiles = [null, null, null, null];
   [1,2,3,4].forEach(function(n){
@@ -490,6 +522,13 @@
         const img = document.getElementById('logoPreview');
         img.src = currentLogoUrl;
         img.style.display = 'inline-block';
+      }
+
+      currentActivationQrUrl = c.activationQrUrl || "";
+      if(currentActivationQrUrl){
+        const qrImg = document.getElementById('activationQrPreview');
+        qrImg.src = currentActivationQrUrl;
+        qrImg.style.display = 'inline-block';
       }
 
       // Task cards — fall back to the site's current defaults if admin
@@ -546,7 +585,7 @@
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    const anyUploading = pendingLogoFile || pendingTaskIconFiles.some(f=>f);
+    const anyUploading = pendingLogoFile || pendingActivationQrFile || pendingTaskIconFiles.some(f=>f);
     if(anyUploading){
       progress.textContent = "ছবি আপলোড হচ্ছে...";
       iconProgress.textContent = "ছবি আপলোড হচ্ছে...";
@@ -557,6 +596,11 @@
       ? uploadToCloudinary(pendingLogoFile)
       : Promise.resolve(null);
 
+    // Activation QR upload (or skip if no new file chosen)
+    const activationQrPromise = pendingActivationQrFile
+      ? uploadToCloudinary(pendingActivationQrFile)
+      : Promise.resolve(null);
+
     // 4 task icon uploads (each resolves to a new URL, or null if no new file chosen)
     const iconPromises = [1,2,3,4].map(function(n){
       const file = pendingTaskIconFiles[n-1];
@@ -564,13 +608,16 @@
       return uploadToCloudinary(file);
     });
 
-    Promise.all([logoPromise, ...iconPromises]).then(function(results){
+    Promise.all([logoPromise, activationQrPromise, ...iconPromises]).then(function(results){
       const logoUrl = results[0];
       baseData.logoUrl = logoUrl || currentLogoUrl || "";
 
+      const qrUrl = results[1];
+      baseData.activationQrUrl = qrUrl || currentActivationQrUrl || "";
+
       const links = ["tasks.html?type=ad", "tasks.html?type=survey", "tasks.html?type=microjob", "refer.html"];
       baseData.taskCards = [1,2,3,4].map(function(n){
-        const uploadedUrl = results[n]; // results[1..4]
+        const uploadedUrl = results[n+1]; // results[2..5]
         const icon = uploadedUrl || document.getElementById('tcIcon' + n).value.trim();
         return {
           icon: icon,
@@ -580,6 +627,7 @@
       });
 
       pendingLogoFile = null;
+      pendingActivationQrFile = null;
       pendingTaskIconFiles = [null, null, null, null];
 
       db.collection("settings").doc("siteContent").set(baseData, { merge: true }).then(()=>{
@@ -716,6 +764,7 @@
     document.getElementById('umActivationStatus').value = d.activationStatus || 'pending';
     document.getElementById('umBalanceAlert').innerHTML = "";
     loadUserHistory(uid);
+    loadUserSubmissions(uid);
     const restrictions = d.restrictions || {};
     document.getElementById('umToggles').innerHTML = FEATURES.map(function(f){
       const r = restrictions[f.key] || { enabled: true, reason: "" };
@@ -763,6 +812,47 @@
         box.innerHTML = html;
       }).catch(function(err){
         box.innerHTML = "হিস্টরি লোড করতে সমস্যা: " + err.message;
+      });
+  }
+
+  function formatProof(d){
+    if(d.proof){
+      if(typeof d.proof === 'string') return d.proof;
+      if(d.proof.link) return `<a href="${d.proof.link}" target="_blank" rel="noopener">লিংক দেখুন</a>`;
+      if(d.proof.text) return d.proof.text;
+      return JSON.stringify(d.proof);
+    }
+    if(d.answer) return String(d.answer);
+    return '-';
+  }
+
+  function loadUserSubmissions(uid){
+    const box = document.getElementById('umSubmissions');
+    box.innerHTML = "লোড হচ্ছে...";
+    db.collection("submissions").where("uid","==",uid).orderBy("createdAt","desc").limit(30).get()
+      .then(function(snap){
+        if(snap.empty){ box.innerHTML = "কোনো সাবমিশন নেই"; return; }
+        let html = "";
+        snap.forEach(function(doc){
+          const d = doc.data();
+          const badgeClass = d.status === 'approved' ? 'badge-approved' : d.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
+          const when = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString('bn-BD') : "";
+          html += `<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;">
+            <b>${d.type || '-'}</b> — ৳${(d.amount||0).toFixed(2)}
+            <span class="badge ${badgeClass}">${d.status}</span><br>
+            <span>উত্তর/প্রমাণ: ${formatProof(d)}</span><br>
+            <span class="muted">${when}</span>`;
+          if(d.status === 'pending'){
+            html += `<div class="mt-16">
+              <button class="btn btn-outline" style="width:auto;padding:5px 10px;font-size:12px;" onclick="approveSubmission('${doc.id}','${uid}',${d.amount||0})">Approve</button>
+              <button class="btn btn-danger" style="width:auto;padding:5px 10px;font-size:12px;" onclick="rejectSubmission('${doc.id}','${uid}')">Reject</button>
+            </div>`;
+          }
+          html += `</div>`;
+        });
+        box.innerHTML = html;
+      }).catch(function(err){
+        box.innerHTML = "সাবমিশন লোড করতে সমস্যা: " + err.message;
       });
   }
 
