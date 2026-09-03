@@ -25,14 +25,14 @@
   <p class="center muted">একবারের জন্য ৳50 একটিভেশন ফি — এরপর আপনি সব টাস্ক করে ইনকাম শুরু করতে পারবেন</p>
 
   <div class="qr-box">
-    <p class="muted" style="margin-top:0;">bKash অ্যাপ দিয়ে QR কোড স্ক্যান করে ৳50 পাঠান</p>
-    <img src="assets/bkash-qr.jpg" alt="bKash QR কোড">
+    <p class="muted" style="margin-top:0;">bKash Merchant নম্বরে ৳50 Send Money করুন</p>
+    <img id="activationQrImg" src="assets/logo.jpg" alt="bKash QR (এখানে আপনার আসল bKash QR কোড বসান)">
+    <div class="merchant-num">01XXXXXXXXX</div>
     <div class="steps">
-      ১. bKash অ্যাপ খুলুন → Scan QR<br>
-      ২. উপরের QR কোডটি স্ক্যান করুন<br>
-      ৩. ৳50 পাঠান<br>
-      ৪. পেমেন্ট শেষে যে Transaction ID পাবেন সেটা নিচে দিন<br>
-      ৫. অ্যাডমিন ম্যানুয়ালি ভেরিফাই করে অ্যাকাউন্ট একটিভ করবে (সাধারণত কিছুক্ষণের মধ্যে)
+      ১. bKash অ্যাপ খুলুন → Send Money<br>
+      ২. উপরের নম্বরে ৳50 পাঠান<br>
+      ৩. পেমেন্ট শেষে যে Transaction ID পাবেন সেটা নিচে দিন<br>
+      ৪. অ্যাডমিন ম্যানুয়ালি ভেরিফাই করে অ্যাকাউন্ট একটিভ করবে (সাধারণত কিছুক্ষণের মধ্যে)
     </div>
   </div>
 
@@ -56,6 +56,14 @@
 <script src="js/app.js"></script>
 <script>
   let currentUid = null;
+
+  // Admin panel থেকে বসানো bKash QR ছবি থাকলে সেটা লোড করে দেখানো হবে,
+  // না থাকলে ডিফল্ট assets/logo.jpg-ই থাকবে।
+  db.collection("settings").doc("siteContent").get().then(function(doc){
+    if(doc.exists && doc.data().activationQrUrl){
+      document.getElementById('activationQrImg').src = doc.data().activationQrUrl;
+    }
+  });
 
   loadUserProfile(function(profile){
     currentUid = profile.uid;
