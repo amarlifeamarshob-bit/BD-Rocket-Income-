@@ -161,3 +161,16 @@ function loadUserProfile(callback){
     });
   });
 }
+
+// ================= Special per-user notices (admin-sent, bell icon) =================
+function loadNotifications(uid, callback){
+  db.collection("notifications").where("uid","==",uid).orderBy("createdAt","desc").limit(20).get().then(function(snap){
+    const list = [];
+    snap.forEach(doc=>list.push({ id: doc.id, ...doc.data() }));
+    if(typeof callback === "function") callback(list);
+  });
+}
+
+function markNotificationRead(id){
+  return db.collection("notifications").doc(id).update({ read: true });
+      }
