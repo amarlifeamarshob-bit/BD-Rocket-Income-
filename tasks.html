@@ -87,6 +87,17 @@
       window.location.href = "activate.html";
       return;
     }
+
+    // Admin can turn off individual task types per-user, with a reason.
+    const restriction = profile.restrictions && profile.restrictions[taskType];
+    if(restriction && restriction.enabled === false){
+      document.querySelector('.container').innerHTML =
+        '<div class="card"><div class="section-title">🚫 এই টাস্কটি বন্ধ আছে</div>' +
+        '<p class="muted">' + (restriction.reason || 'অ্যাডমিন এই টাস্কটি আপাতত বন্ধ রেখেছেন।') + '</p>' +
+        '<a href="dashboard.html" class="btn btn-outline mt-16">হোমে ফিরে যান</a></div>';
+      return;
+    }
+
     // Rates are set by admin in settings/rates — falls back to 0 until configured
     db.collection("settings").doc("rates").get().then(function(doc){
       const rates = doc.exists ? doc.data() : {};

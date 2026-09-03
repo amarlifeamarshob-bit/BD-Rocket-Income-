@@ -55,6 +55,13 @@
     myRefCode = profile.refCode;
     document.getElementById('refCodeBadge').textContent = myRefCode;
 
+    const restriction = profile.restrictions && profile.restrictions.refer;
+    if(restriction && restriction.enabled === false){
+      document.querySelector('.card.center').innerHTML =
+        '<div class="section-title" style="justify-content:center;">🚫 রেফার সিস্টেম বন্ধ আছে</div>' +
+        '<p class="muted">' + (restriction.reason || 'অ্যাডমিন আপনার রেফার সুবিধা আপাতত বন্ধ রেখেছেন।') + '</p>';
+    }
+
     db.collection("users").where("referredBy","==", myRefCode).get().then(function(snap){
       const body = document.getElementById('teamBody');
       if(snap.empty){
