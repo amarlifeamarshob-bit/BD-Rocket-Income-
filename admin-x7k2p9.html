@@ -454,6 +454,23 @@
     });
   }
 
+  // ================= Cloudinary (image uploads — free, unlimited, no card) =================
+  const CLOUDINARY_CLOUD_NAME = "wu6xmvoo";
+  const CLOUDINARY_UPLOAD_PRESET = "covxenzh";
+
+  function uploadToCloudinary(file){
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    return fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload', {
+      method: 'POST',
+      body: formData
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if(data && data.secure_url) return data.secure_url;
+      throw new Error((data && data.error && data.error.message) || 'আপলোড ব্যর্থ');
+    });
+  }
+
   function saveSiteContent(){
     const alertBox = document.getElementById('siteContentAlert');
     const progress = document.getElementById('logoUploadProgress');
@@ -477,14 +494,14 @@
 
     // Logo upload (or skip if no new file chosen)
     const logoPromise = pendingLogoFile
-      ? storage.ref("logos/" + Date.now() + "_" + pendingLogoFile.name).put(pendingLogoFile).then(snap=>snap.ref.getDownloadURL())
+      ? uploadToCloudinary(pendingLogoFile)
       : Promise.resolve(null);
 
     // 4 task icon uploads (each resolves to a new URL, or null if no new file chosen)
     const iconPromises = [1,2,3,4].map(function(n){
       const file = pendingTaskIconFiles[n-1];
       if(!file) return Promise.resolve(null);
-      return storage.ref("taskIcons/" + Date.now() + "_" + n + "_" + file.name).put(file).then(snap=>snap.ref.getDownloadURL());
+      return uploadToCloudinary(file);
     });
 
     Promise.all([logoPromise, ...iconPromises]).then(function(results){
