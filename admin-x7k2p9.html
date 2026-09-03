@@ -31,17 +31,30 @@
 <div id="adminPanel" class="hidden">
 
   <div class="tabs">
-    <button class="active" onclick="showSection('activations',this)">Activations</button>
-    <button onclick="showSection('submissions',this)">Task Submissions</button>
+    <button class="active" onclick="showSection('tasks',this)">Tasks</button>
+    <button onclick="showSection('activations',this)">Activations</button>
+    <button onclick="showSection('submissions',this)">Submissions</button>
     <button onclick="showSection('withdrawals',this)">Withdrawals</button>
-    <button onclick="showSection('rates',this)">Rates</button>
-    <button onclick="showSection('siteContent',this)">Site Content</button>
-    <button onclick="showSection('adFormFields',this)">Ad ফর্ম</button>
-    <button onclick="showSection('questions',this)">Questions</button>
-    <button onclick="showSection('users',this)">ইউজার</button>
   </div>
 
-  <div id="activations" class="section active card">
+  <div id="tasks" class="section active card">
+    <h3>টাস্ক ম্যানেজার</h3>
+    <div id="taskAlert"></div>
+    <div style="display:grid;gap:10px;margin-bottom:20px;">
+      <input type="text" id="taskName" placeholder="টাস্কের নাম" style="border:1px solid #ddd;padding:10px;border-radius:8px;">
+      <input type="number" id="taskRate" placeholder="Rate (৳)" step="0.01" style="border:1px solid #ddd;padding:10px;border-radius:8px;">
+      <input type="text" id="taskPin" placeholder="PIN Code" style="border:1px solid #ddd;padding:10px;border-radius:8px;">
+      <textarea id="taskInstructions" placeholder="কাজের নিয়ম/নির্দেশনা" rows="3" style="border:1px solid #ddd;padding:10px;border-radius:8px;"></textarea>
+      <button class="btn btn-primary" onclick="createTask()" style="width:100%;padding:12px;">নতুন টাস্ক যোগ করুন</button>
+    </div>
+    <h4>সব টাস্ক</h4>
+    <table>
+      <thead><tr><th>নাম</th><th>রেট</th><th>PIN</th><th>অ্যাকশন</th></tr></thead>
+      <tbody id="tasksBody"><tr><td colspan="4" class="muted center">লোড হচ্ছে...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div id="activations" class="section card">
     <h3>একটিভেশন অনুরোধ</h3>
     <table>
       <thead><tr><th>নাম</th><th>ফোন</th><th>Trx ID</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr></thead>
@@ -52,8 +65,8 @@
   <div id="submissions" class="section card">
     <h3>টাস্ক সাবমিশন</h3>
     <table>
-      <thead><tr><th>টাইপ</th><th>পরিমাণ</th><th>প্রমাণ</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr></thead>
-      <tbody id="submissionsBody"><tr><td colspan="5" class="muted center">লোড হচ্ছে...</td></tr></tbody>
+      <thead><tr><th>টাস্ক</th><th>ফিল্ড 1</th><th>ফিল্ড 2</th><th>ফিল্ড 3</th><th>পরিমাণ</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr></thead>
+      <tbody id="submissionsBody"><tr><td colspan="7" class="muted center">লোড হচ্ছে...</td></tr></tbody>
     </table>
   </div>
 
@@ -75,218 +88,11 @@
     <div id="ratesAlert" class="mt-16"></div>
   </div>
 
-  <div id="siteContent" class="section card">
-    <h3>সাইট কনটেন্ট</h3>
-
-    <label>সাইটের নাম</label>
-    <input type="text" id="cfgSiteName" placeholder="যেমন: BD Rocket Income">
-
-    <label>হিরো টাইটেল (হোমপেজের বড় হেডিং)</label>
-    <input type="text" id="cfgHeroTitle" placeholder="যেমন: ঘরে বসে আয় করুন">
-
-    <label>হিরো সাব-টেক্সট</label>
-    <textarea id="cfgHeroSubtitle" rows="2" placeholder="হেডিং এর নিচের ছোট লেখা"></textarea>
-
-    <label>নোটিস / ঘোষণা (ড্যাশবোর্ডে দেখাবে)</label>
-    <textarea id="cfgNotice" rows="3" placeholder="যেমন: আজ সার্ভার মেইনটেনেন্স থাকবে..."></textarea>
-
-    <label>থিম কালার</label>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <input type="color" id="cfgPrimaryColor" style="width:60px;height:40px;padding:2px;">
-      <input type="text" id="cfgPrimaryColorHex" placeholder="#2b6df6" style="max-width:140px;">
-    </div>
-
-    <label class="mt-16">লোগো</label>
-    <div style="display:flex;gap:14px;align-items:center;">
-      <img id="logoPreview" src="" alt="logo" style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
-      <input type="file" id="logoFile" accept="image/*">
-    </div>
-    <div id="logoUploadProgress" class="muted" style="font-size:12px;"></div>
-
-    <label class="mt-16">একটিভেশন পেজের bKash QR ছবি</label>
-    <p class="muted" style="font-size:12px;margin-top:0;">অ্যাকাউন্ট খোলার পর activate.html পেজে এই ছবিটা দেখানো হয়</p>
-    <div style="display:flex;gap:14px;align-items:center;">
-      <img id="activationQrPreview" src="" alt="activation qr" style="width:64px;height:64px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
-      <input type="file" id="activationQrFile" accept="image/*">
-    </div>
-    <div id="activationQrUploadProgress" class="muted" style="font-size:12px;"></div>
-
-    <h3 class="mt-16">🚀 হোমপেজের টাস্ক কার্ড (আইকন ও নাম)</h3>
-    <p class="muted" style="font-size:12px;">প্রতিটার জন্য ছবি আপলোড করো (ফোন থেকে সরাসরি বাছাই করা যাবে)। ছবি না দিলে ইমোজি লিখলেও চলবে।</p>
-
-    <div class="rate-row" style="align-items:flex-start;">
-      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ১</label>
-      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <img id="tcIconPreview1" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
-          <input type="file" id="tcIconFile1" accept="image/*" style="flex:1;">
-        </div>
-        <input type="text" id="tcIcon1" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন 📺">
-      </div>
-      <input type="text" id="tcLabel1" placeholder="Ad ভিউ" style="flex:1;">
-    </div>
-
-    <div class="rate-row" style="align-items:flex-start;">
-      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ২</label>
-      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <img id="tcIconPreview2" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
-          <input type="file" id="tcIconFile2" accept="image/*" style="flex:1;">
-        </div>
-        <input type="text" id="tcIcon2" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন 📝">
-      </div>
-      <input type="text" id="tcLabel2" placeholder="সার্ভে" style="flex:1;">
-    </div>
-
-    <div class="rate-row" style="align-items:flex-start;">
-      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ৩</label>
-      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <img id="tcIconPreview3" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
-          <input type="file" id="tcIconFile3" accept="image/*" style="flex:1;">
-        </div>
-        <input type="text" id="tcIcon3" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন ⌨️">
-      </div>
-      <input type="text" id="tcLabel3" placeholder="মাইক্রো জব" style="flex:1;">
-    </div>
-
-    <div class="rate-row" style="align-items:flex-start;">
-      <label style="flex:0 0 90px;padding-top:8px;">টাস্ক ৪</label>
-      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <img id="tcIconPreview4" src="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f2f4fa;display:none;">
-          <input type="file" id="tcIconFile4" accept="image/*" style="flex:1;">
-        </div>
-        <input type="text" id="tcIcon4" placeholder="ছবি না দিলে এখানে ইমোজি লিখো, যেমন 👥">
-      </div>
-      <input type="text" id="tcLabel4" placeholder="রেফার" style="flex:1;">
-    </div>
-    <div id="taskIconUploadProgress" class="muted" style="font-size:12px;"></div>
-
-    <button class="btn btn-primary mt-16" onclick="saveSiteContent()">সেভ করুন</button>
-    <div id="siteContentAlert" class="mt-16"></div>
-  </div>
-
-  <div id="adFormFields" class="section card">
-    <h3>📺 Ad ভিউ টাস্কের ফর্ম</h3>
-    <p class="muted" style="font-size:12px;">Ad ভিউ টাস্কে ইউজারকে যে ৩টা ঘর পূরণ করতে হবে, তার লেবেল এখান থেকে বসান। ইউজার প্রতিবার নিজে সব ঘরে টাইপ করে জমা দেবে।</p>
-
-    <label>ঘর ১ এর লেবেল</label>
-    <input type="text" id="adLabel1" placeholder="যেমন: বিজ্ঞাপন লিংক">
-
-    <label>ঘর ২ এর লেবেল</label>
-    <input type="text" id="adLabel2" placeholder="যেমন: স্ক্রিনশট লিংক">
-
-    <label>ঘর ৩ এর লেবেল</label>
-    <input type="text" id="adLabel3" placeholder="যেমন: সময় (কতক্ষণ দেখলেন)">
-
-    <button class="btn btn-primary mt-16" onclick="saveAdFormFields()">সেভ করুন</button>
-    <div id="adFormFieldsAlert" class="mt-16"></div>
-  </div>
-
-  <div id="questions" class="section card">
-    <h3>নতুন প্রশ্ন যোগ করুন</h3>
-    <label>প্রশ্ন</label>
-    <input type="text" id="qText" placeholder="প্রশ্নটি লিখুন">
-
-    <label>উত্তরের ধরন</label>
-    <select id="qAnswerType" onchange="toggleAnswerType()">
-      <option value="options">অপশন থেকে বাছাই (Multiple Choice)</option>
-      <option value="text">নিজে লিখে/পেস্ট করে উত্তর দিবে (Text Answer)</option>
-    </select>
-
-    <div id="optionFields">
-      <label>অপশন ১</label>
-      <input type="text" id="qOpt1">
-      <label>অপশন ২</label>
-      <input type="text" id="qOpt2">
-      <label>অপশন ৩</label>
-      <input type="text" id="qOpt3">
-      <label>অপশন ৪</label>
-      <input type="text" id="qOpt4">
-      <label>সঠিক উত্তর</label>
-      <select id="qCorrect">
-        <option value="0">অপশন ১</option>
-        <option value="1">অপশন ২</option>
-        <option value="2">অপশন ৩</option>
-        <option value="3">অপশন ৪</option>
-      </select>
-    </div>
-
-    <div id="textFields" class="hidden">
-      <label>প্রত্যাশিত/নমুনা উত্তর (ঐচ্ছিক — শুধু আপনার রেফারেন্সের জন্য, ইউজার দেখবে না)</label>
-      <textarea id="qExpectedText" rows="2" placeholder="যেমন: সঠিক লিংক বা টেক্সট যা মিলিয়ে দেখবেন"></textarea>
-      <p class="muted" style="font-size:12px;">এই ধরনের প্রশ্নে ইউজার নিজে টাইপ বা পেস্ট করে উত্তর জমা দেবে। উত্তর automatic চেক হবে না — Submissions ট্যাব থেকে আপনাকে ম্যানুয়ালি দেখে Approve/Reject করতে হবে।</p>
-    </div>
-
-    <label class="mt-16">রিওয়ার্ড (৳, ঐচ্ছিক — খালি রাখলে সার্ভে রেট ব্যবহার হবে)</label>
-    <input type="number" id="qReward" step="0.01">
-    <button class="btn btn-primary mt-16" onclick="addQuestion()">যোগ করুন</button>
-    <div id="questionsAlert" class="mt-16"></div>
-
-    <h3 class="mt-16">সব প্রশ্ন</h3>
-    <table>
-      <thead><tr><th>প্রশ্ন</th><th>ধরন</th><th>সঠিক উত্তর</th><th>রিওয়ার্ড</th><th>অ্যাকশন</th></tr></thead>
-      <tbody id="questionsBody"><tr><td colspan="5" class="muted center">লোড হচ্ছে...</td></tr></tbody>
-    </table>
-  </div>
-
-  <div id="users" class="section card">
-    <h3>সব ইউজার</h3>
-    <p class="muted" style="font-size:12px;">প্রতিজনের জন্য টাস্ক/উইথড্র/রেফার আলাদাভাবে অন-অফ করতে পারবে (অফ করলে ইউজার কারণটা দেখতে পাবে), আর চাইলে আলাদা নোটিশও পাঠাতে পারবে।</p>
-    <table>
-      <thead><tr><th>নাম</th><th>ফোন</th><th>স্ট্যাটাস</th><th>ব্যালেন্স</th><th>অ্যাকশন</th></tr></thead>
-      <tbody id="usersBody"><tr><td colspan="5" class="muted center">লোড হচ্ছে...</td></tr></tbody>
-    </table>
-  </div>
-
-</div>
-
-<div id="userModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;">
-    <h3 id="umUserName">ইউজার</h3>
-
-    <label>ব্যালেন্স (৳)</label>
-    <input type="number" id="umBalance" step="0.01">
-
-    <label>ম্যানুয়াল এডিটের কারণ (ঐচ্ছিক, শুধু আপনার নিজের নোটের জন্য)</label>
-    <input type="text" id="umAdjustNote" placeholder="যেমন: বোনাস, ভুল সংশোধন ইত্যাদি">
-
-    <label>একটিভেশন স্ট্যাটাস</label>
-    <select id="umActivationStatus">
-      <option value="pending">pending</option>
-      <option value="approved">approved</option>
-      <option value="rejected">rejected</option>
-    </select>
-
-    <button class="btn btn-primary mt-16" onclick="saveUserBalanceStatus()">ব্যালেন্স/স্ট্যাটাস সেভ করুন</button>
-    <div id="umBalanceAlert" class="mt-16"></div>
-
-    <h4 class="mt-16">📜 ব্যালেন্স হিস্টরি</h4>
-    <div id="umHistory" class="muted" style="font-size:12px;max-height:160px;overflow-y:auto;">লোড হচ্ছে...</div>
-
-    <h4 class="mt-16">🗂️ টাস্ক সাবমিশন (উত্তরসহ)</h4>
-    <div id="umSubmissions" class="muted" style="font-size:12px;max-height:220px;overflow-y:auto;">লোড হচ্ছে...</div>
-
-    <hr style="margin:18px 0;border:none;border-top:1px solid #eee;">
-    <div id="umToggles"></div>
-    <div id="umAlert" class="mt-16"></div>
-    <button class="btn btn-primary mt-16" onclick="saveUserRestrictions()">এক্সেস সেভ করুন</button>
-
-    <hr style="margin:18px 0;border:none;border-top:1px solid #eee;">
-    <h4>🔔 স্পেশাল নোটিশ পাঠান</h4>
-    <textarea id="umNoticeText" rows="3" placeholder="শুধু এই ইউজারকে যে নোটিশ দেখাবে"></textarea>
-    <button class="btn btn-outline mt-16" onclick="sendUserNotice()">নোটিশ পাঠান</button>
-    <div id="umNoticeAlert" class="mt-16"></div>
-
-    <button class="btn btn-danger mt-16" onclick="closeUserModal()">বন্ধ করুন</button>
-  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script>
   // ================================================================
@@ -302,13 +108,71 @@
   // verification happens on Firebase's server (signInWithEmailAndPassword)
   // plus the Firestore "admins" collection check below — neither can
   // be bypassed by viewing the page source.
-  const ADMIN_EMAIL = "amarlifeamarshob@gmail.com";
+  const ADMIN_EMAIL = "gojolsong@gmail.com";
 
   function showSection(id, btn){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
     document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     btn.classList.add('active');
+    if(id === 'tasks') loadTasks();
+  }
+
+  function createTask(){
+    const name = document.getElementById('taskName').value.trim();
+    const rate = parseFloat(document.getElementById('taskRate').value);
+    const pin = document.getElementById('taskPin').value.trim();
+    const instructions = document.getElementById('taskInstructions').value.trim();
+    const alert = document.getElementById('taskAlert');
+    alert.innerHTML = "";
+    if(!name || !rate || !pin || !instructions){
+      alert.innerHTML = '<div class="alert alert-error">সব ঘর পূরণ করুন</div>';
+      return;
+    }
+    db.collection("tasks").add({
+      name: name,
+      rate: rate,
+      pin: pin,
+      instructions: instructions,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      alert.innerHTML = '<div class="alert alert-success">টাস্ক যোগ হয়েছে</div>';
+      document.getElementById('taskName').value = "";
+      document.getElementById('taskRate').value = "";
+      document.getElementById('taskPin').value = "";
+      document.getElementById('taskInstructions').value = "";
+      loadTasks();
+    }).catch(err=>{
+      alert.innerHTML = '<div class="alert alert-error">Error: ' + err.message + '</div>';
+    });
+  }
+
+  function loadTasks(){
+    db.collection("tasks").orderBy("createdAt", "desc").get().then(snap=>{
+      const body = document.getElementById('tasksBody');
+      if(snap.empty){
+        body.innerHTML = '<tr><td colspan="4" class="muted center">কোনো টাস্ক নেই</td></tr>';
+        return;
+      }
+      body.innerHTML = "";
+      snap.forEach(doc=>{
+        const d = doc.data();
+        body.innerHTML += `<tr>
+          <td>${d.name}</td>
+          <td>৳${d.rate.toFixed(2)}</td>
+          <td><strong>${d.pin}</strong></td>
+          <td>
+            <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="deleteTask('${doc.id}')">Delete</button>
+          </td>
+        </tr>`;
+      });
+    });
+  }
+
+  function deleteTask(taskId){
+    if(confirm('এই টাস্কটি ডিলিট করতে চান?')){
+      db.collection("tasks").doc(taskId).delete().then(loadTasks);
+    }
   }
 
   function adminLogin(){
@@ -329,10 +193,7 @@
         loadSubmissions();
         loadWithdrawals();
         loadRates();
-        loadSiteContent();
-        loadAdFormFields();
-        loadQuestions();
-        loadUsersTab();
+      } else {
         auth.signOut();
         alertBox.innerHTML = '<div class="alert alert-error">ভুল কোড</div>';
       }
@@ -366,16 +227,16 @@
   function loadSubmissions(){
     db.collection("submissions").where("status","==","pending").get().then(snap=>{
       const body = document.getElementById('submissionsBody');
-      if(snap.empty){ body.innerHTML = '<tr><td colspan="5" class="muted center">কোনো পেন্ডিং সাবমিশন নেই</td></tr>'; return; }
+      if(snap.empty){ body.innerHTML = '<tr><td colspan="7" class="muted center">কোনো পেন্ডিং সাবমিশন নেই</td></tr>'; return; }
       body.innerHTML = "";
       snap.forEach(doc=>{
         const d = doc.data();
         body.innerHTML += `<tr>
-          <td>${d.type}</td><td>৳${(d.amount||0).toFixed(2)}</td><td>${formatProof(d)}</td>
+          <td>${d.taskName}</td><td>${d.field1}</td><td>${d.field2}</td><td>${d.field3}</td><td>৳${(d.amount||0).toFixed(2)}</td>
           <td><span class="badge badge-pending">pending</span></td>
           <td>
             <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:12px;" onclick="approveSubmission('${doc.id}','${d.uid}',${d.amount})">Approve</button>
-            <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="rejectSubmission('${doc.id}','${d.uid}')">Reject</button>
+            <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="rejectSubmission('${doc.id}')">Reject</button>
           </td>
         </tr>`;
       });
@@ -384,29 +245,17 @@
 
   function approveSubmission(subId, uid, amount){
     const userRef = db.collection("users").doc(uid);
-    const txRef = db.collection("transactions").doc();
     db.runTransaction(t=>{
       return t.get(userRef).then(doc=>{
         const newBalance = (doc.data().balance || 0) + amount;
         t.update(userRef, { balance: newBalance });
         t.update(db.collection("submissions").doc(subId), { status: "approved" });
-        t.set(txRef, {
-          uid: uid, type: "task_approved", amount: amount, balanceAfter: newBalance,
-          note: "টাস্ক সাবমিশন অনুমোদন", refId: subId,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
       });
-    }).then(function(){
-      loadSubmissions();
-      if(currentManagedUid === uid){ loadUserSubmissions(uid); loadUserHistory(uid); }
-    });
+    }).then(loadSubmissions);
   }
 
-  function rejectSubmission(subId, uid){
-    db.collection("submissions").doc(subId).update({ status: "rejected" }).then(function(){
-      loadSubmissions();
-      if(uid && currentManagedUid === uid){ loadUserSubmissions(uid); }
-    });
+  function rejectSubmission(subId){
+    db.collection("submissions").doc(subId).update({ status: "rejected" }).then(loadSubmissions);
   }
 
   function loadWithdrawals(){
@@ -430,17 +279,11 @@
 
   function approveWithdrawal(wId, uid, amount){
     const userRef = db.collection("users").doc(uid);
-    const txRef = db.collection("transactions").doc();
     db.runTransaction(t=>{
       return t.get(userRef).then(doc=>{
         const newBalance = (doc.data().balance || 0) - amount;
         t.update(userRef, { balance: newBalance });
         t.update(db.collection("withdrawals").doc(wId), { status: "approved" });
-        t.set(txRef, {
-          uid: uid, type: "withdrawal_approved", amount: -amount, balanceAfter: newBalance,
-          note: "উইথড্র অনুমোদন", refId: wId,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
       });
     }).then(loadWithdrawals);
   }
@@ -468,541 +311,6 @@
     };
     db.collection("settings").doc("rates").set(rates).then(()=>{
       document.getElementById('ratesAlert').innerHTML = '<div class="alert alert-success">রেট সেভ হয়েছে</div>';
-    });
-  }
-
-  // ================= Ad ভিউ ফর্ম লেবেল =================
-  function loadAdFormFields(){
-    db.collection("settings").doc("adForm").get().then(function(doc){
-      const d = doc.exists ? doc.data() : {};
-      const labels = d.labels || [];
-      document.getElementById('adLabel1').value = labels[0] || "";
-      document.getElementById('adLabel2').value = labels[1] || "";
-      document.getElementById('adLabel3').value = labels[2] || "";
-    });
-  }
-
-  function saveAdFormFields(){
-    const alertBox = document.getElementById('adFormFieldsAlert');
-    const labels = [
-      document.getElementById('adLabel1').value.trim(),
-      document.getElementById('adLabel2').value.trim(),
-      document.getElementById('adLabel3').value.trim()
-    ];
-    if(labels.some(l=>!l)){
-      alertBox.innerHTML = '<div class="alert alert-error">৩টা ঘরই পূরণ করুন</div>';
-      return;
-    }
-    db.collection("settings").doc("adForm").set({ labels: labels }).then(function(){
-      alertBox.innerHTML = '<div class="alert alert-success">সেভ হয়েছে</div>';
-    }).catch(function(err){
-      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
-    });
-  }
-
-  // ================= Site Content (text, notice, color, logo) =================
-  let pendingLogoFile = null;
-  let currentLogoUrl = "";
-
-  document.getElementById('cfgPrimaryColor').addEventListener('input', function(){
-    document.getElementById('cfgPrimaryColorHex').value = this.value;
-  });
-  document.getElementById('cfgPrimaryColorHex').addEventListener('input', function(){
-    if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('cfgPrimaryColor').value = this.value;
-  });
-  document.getElementById('logoFile').addEventListener('change', function(){
-    pendingLogoFile = this.files[0] || null;
-    if(pendingLogoFile){
-      const reader = new FileReader();
-      reader.onload = e=>{
-        const img = document.getElementById('logoPreview');
-        img.src = e.target.result;
-        img.style.display = 'inline-block';
-      };
-      reader.readAsDataURL(pendingLogoFile);
-    }
-  });
-
-  let pendingActivationQrFile = null;
-  let currentActivationQrUrl = "";
-  document.getElementById('activationQrFile').addEventListener('change', function(){
-    pendingActivationQrFile = this.files[0] || null;
-    if(pendingActivationQrFile){
-      const reader = new FileReader();
-      reader.onload = e=>{
-        const img = document.getElementById('activationQrPreview');
-        img.src = e.target.result;
-        img.style.display = 'inline-block';
-      };
-      reader.readAsDataURL(pendingActivationQrFile);
-    }
-  });
-
-  // ---- Task card icon uploads ----
-  let pendingTaskIconFiles = [null, null, null, null];
-  [1,2,3,4].forEach(function(n){
-    document.getElementById('tcIconFile' + n).addEventListener('change', function(){
-      pendingTaskIconFiles[n-1] = this.files[0] || null;
-      if(pendingTaskIconFiles[n-1]){
-        const reader = new FileReader();
-        reader.onload = e=>{
-          const img = document.getElementById('tcIconPreview' + n);
-          img.src = e.target.result;
-          img.style.display = 'inline-block';
-        };
-        reader.readAsDataURL(pendingTaskIconFiles[n-1]);
-      }
-    });
-  });
-
-  function loadSiteContent(){
-    db.collection("settings").doc("siteContent").get().then(doc=>{
-      const c = doc.exists ? doc.data() : {};
-      document.getElementById('cfgSiteName').value = c.siteName || "";
-      document.getElementById('cfgHeroTitle').value = c.heroTitle || "";
-      document.getElementById('cfgHeroSubtitle').value = c.heroSubtitle || "";
-      document.getElementById('cfgNotice').value = c.notice || "";
-      const color = c.primaryColor || "#2b6df6";
-      document.getElementById('cfgPrimaryColor').value = color;
-      document.getElementById('cfgPrimaryColorHex').value = color;
-      currentLogoUrl = c.logoUrl || "";
-      if(currentLogoUrl){
-        const img = document.getElementById('logoPreview');
-        img.src = currentLogoUrl;
-        img.style.display = 'inline-block';
-      }
-
-      currentActivationQrUrl = c.activationQrUrl || "";
-      if(currentActivationQrUrl){
-        const qrImg = document.getElementById('activationQrPreview');
-        qrImg.src = currentActivationQrUrl;
-        qrImg.style.display = 'inline-block';
-      }
-
-      // Task cards — fall back to the site's current defaults if admin
-      // hasn't customized them yet.
-      const defaults = [
-        { icon: "📺", label: "Ad ভিউ" },
-        { icon: "📝", label: "সার্ভে" },
-        { icon: "⌨️", label: "মাইক্রো জব" },
-        { icon: "👥", label: "রেফার" }
-      ];
-      const cards = (c.taskCards && c.taskCards.length === 4) ? c.taskCards : defaults;
-      cards.forEach((t, i)=>{
-        document.getElementById('tcIcon' + (i+1)).value = t.icon || "";
-        document.getElementById('tcLabel' + (i+1)).value = t.label || "";
-        const isImage = t.icon && /^https?:\/\//.test(t.icon);
-        if(isImage){
-          const img = document.getElementById('tcIconPreview' + (i+1));
-          img.src = t.icon;
-          img.style.display = 'inline-block';
-        }
-      });
-    });
-  }
-
-  // ================= Cloudinary (image uploads — free, unlimited, no card) =================
-  const CLOUDINARY_CLOUD_NAME = "wu6xmvoo";
-  const CLOUDINARY_UPLOAD_PRESET = "covxenzh";
-
-  function uploadToCloudinary(file){
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    return fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload', {
-      method: 'POST',
-      body: formData
-    }).then(function(r){ return r.json(); }).then(function(data){
-      if(data && data.secure_url) return data.secure_url;
-      throw new Error((data && data.error && data.error.message) || 'আপলোড ব্যর্থ');
-    });
-  }
-
-  function saveSiteContent(){
-    const alertBox = document.getElementById('siteContentAlert');
-    const progress = document.getElementById('logoUploadProgress');
-    const iconProgress = document.getElementById('taskIconUploadProgress');
-    alertBox.innerHTML = "";
-
-    const baseData = {
-      siteName: document.getElementById('cfgSiteName').value.trim(),
-      heroTitle: document.getElementById('cfgHeroTitle').value.trim(),
-      heroSubtitle: document.getElementById('cfgHeroSubtitle').value.trim(),
-      notice: document.getElementById('cfgNotice').value.trim(),
-      primaryColor: document.getElementById('cfgPrimaryColorHex').value.trim() || "#2b6df6",
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    const anyUploading = pendingLogoFile || pendingActivationQrFile || pendingTaskIconFiles.some(f=>f);
-    if(anyUploading){
-      progress.textContent = "ছবি আপলোড হচ্ছে...";
-      iconProgress.textContent = "ছবি আপলোড হচ্ছে...";
-    }
-
-    // Logo upload (or skip if no new file chosen)
-    const logoPromise = pendingLogoFile
-      ? uploadToCloudinary(pendingLogoFile)
-      : Promise.resolve(null);
-
-    // Activation QR upload (or skip if no new file chosen)
-    const activationQrPromise = pendingActivationQrFile
-      ? uploadToCloudinary(pendingActivationQrFile)
-      : Promise.resolve(null);
-
-    // 4 task icon uploads (each resolves to a new URL, or null if no new file chosen)
-    const iconPromises = [1,2,3,4].map(function(n){
-      const file = pendingTaskIconFiles[n-1];
-      if(!file) return Promise.resolve(null);
-      return uploadToCloudinary(file);
-    });
-
-    Promise.all([logoPromise, activationQrPromise, ...iconPromises]).then(function(results){
-      const logoUrl = results[0];
-      baseData.logoUrl = logoUrl || currentLogoUrl || "";
-
-      const qrUrl = results[1];
-      baseData.activationQrUrl = qrUrl || currentActivationQrUrl || "";
-
-      const links = ["tasks.html?type=ad", "tasks.html?type=survey", "tasks.html?type=microjob", "refer.html"];
-      baseData.taskCards = [1,2,3,4].map(function(n){
-        const uploadedUrl = results[n+1]; // results[2..5]
-        const icon = uploadedUrl || document.getElementById('tcIcon' + n).value.trim();
-        return {
-          icon: icon,
-          label: document.getElementById('tcLabel' + n).value.trim(),
-          link: links[n-1]
-        };
-      });
-
-      pendingLogoFile = null;
-      pendingActivationQrFile = null;
-      pendingTaskIconFiles = [null, null, null, null];
-
-      db.collection("settings").doc("siteContent").set(baseData, { merge: true }).then(()=>{
-        alertBox.innerHTML = '<div class="alert alert-success">কনটেন্ট সেভ হয়েছে</div>';
-        progress.textContent = "";
-        iconProgress.textContent = "";
-      }).catch(err=>{
-        progress.textContent = "";
-        iconProgress.textContent = "";
-        alertBox.innerHTML = '<div class="alert alert-error">সেভ ব্যর্থ হয়েছে: ' + err.message + '</div>';
-      });
-    }).catch(function(err){
-      progress.textContent = "";
-      iconProgress.textContent = "";
-      alertBox.innerHTML = '<div class="alert alert-error">ছবি আপলোড ব্যর্থ: ' + err.message + '</div>';
-    });
-  }
-
-  // ================= Questions (survey Q&A) =================
-  function toggleAnswerType(){
-    const type = document.getElementById('qAnswerType').value;
-    document.getElementById('optionFields').classList.toggle('hidden', type !== 'options');
-    document.getElementById('textFields').classList.toggle('hidden', type !== 'text');
-  }
-
-  function loadQuestions(){
-    db.collection("questions").orderBy("createdAt","desc").get().then(snap=>{
-      const body = document.getElementById('questionsBody');
-      if(snap.empty){ body.innerHTML = '<tr><td colspan="5" class="muted center">কোনো প্রশ্ন নেই</td></tr>'; return; }
-      body.innerHTML = "";
-      snap.forEach(doc=>{
-        const d = doc.data();
-        const isText = d.answerType === 'text';
-        const typeLabel = isText ? 'টেক্সট (ম্যানুয়াল)' : 'অপশন';
-        const correctText = isText ? (d.expectedText || '—') : ((d.options && d.options[d.correctIndex]) || "-");
-        body.innerHTML += `<tr>
-          <td>${d.question}</td>
-          <td>${typeLabel}</td>
-          <td>${correctText}</td>
-          <td>${d.reward ? '৳'+Number(d.reward).toFixed(2) : 'ডিফল্ট'}</td>
-          <td><button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:12px;" onclick="deleteQuestion('${doc.id}')">Delete</button></td>
-        </tr>`;
-      });
-    });
-  }
-
-  function addQuestion(){
-    const alertBox = document.getElementById('questionsAlert');
-    const question = document.getElementById('qText').value.trim();
-    const answerType = document.getElementById('qAnswerType').value;
-    const rewardRaw = document.getElementById('qReward').value;
-    const reward = rewardRaw ? parseFloat(rewardRaw) : null;
-
-    if(!question){
-      alertBox.innerHTML = '<div class="alert alert-error">প্রশ্ন লিখুন</div>';
-      return;
-    }
-
-    const data = {
-      question, answerType, reward,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    if(answerType === 'text'){
-      data.expectedText = document.getElementById('qExpectedText').value.trim();
-    } else {
-      const options = [
-        document.getElementById('qOpt1').value.trim(),
-        document.getElementById('qOpt2').value.trim(),
-        document.getElementById('qOpt3').value.trim(),
-        document.getElementById('qOpt4').value.trim()
-      ];
-      if(options.some(o=>!o)){
-        alertBox.innerHTML = '<div class="alert alert-error">সবগুলো অপশন পূরণ করুন</div>';
-        return;
-      }
-      data.options = options;
-      data.correctIndex = parseInt(document.getElementById('qCorrect').value, 10);
-    }
-
-    db.collection("questions").add(data).then(()=>{
-      alertBox.innerHTML = '<div class="alert alert-success">প্রশ্ন যোগ হয়েছে</div>';
-      document.getElementById('qText').value = "";
-      document.getElementById('qOpt1').value = "";
-      document.getElementById('qOpt2').value = "";
-      document.getElementById('qOpt3').value = "";
-      document.getElementById('qOpt4').value = "";
-      document.getElementById('qExpectedText').value = "";
-      document.getElementById('qReward').value = "";
-      loadQuestions();
-    });
-  }
-
-  function deleteQuestion(id){
-    db.collection("questions").doc(id).delete().then(loadQuestions);
-  }
-
-  // ================= Users (access control + special notices) =================
-  const FEATURES = [
-    { key: 'ad', label: 'Ad ভিউ টাস্ক' },
-    { key: 'survey', label: 'সার্ভে টাস্ক' },
-    { key: 'microjob', label: 'মাইক্রো জব টাস্ক' },
-    { key: 'withdraw', label: 'উইথড্র' },
-    { key: 'refer', label: 'রেফার সিস্টেম' }
-  ];
-  let allUsersCache = {};
-  let currentManagedUid = null;
-
-  function loadUsersTab(){
-    db.collection("users").orderBy("createdAt","desc").get().then(function(snap){
-      const body = document.getElementById('usersBody');
-      if(snap.empty){ body.innerHTML = '<tr><td colspan="5" class="muted center">কোনো ইউজার নেই</td></tr>'; return; }
-      body.innerHTML = "";
-      snap.forEach(function(doc){
-        const d = doc.data();
-        allUsersCache[doc.id] = d;
-        body.innerHTML += `<tr>
-          <td>${d.name || '-'}</td>
-          <td>${d.phone || '-'}</td>
-          <td><span class="badge badge-${d.activationStatus==='approved'?'approved':d.activationStatus==='rejected'?'rejected':'pending'}">${d.activationStatus||'-'}</span></td>
-          <td>৳${(d.balance||0).toFixed(2)}</td>
-          <td><button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:12px;" onclick="openUserModal('${doc.id}')">ম্যানেজ করুন</button></td>
-        </tr>`;
-      });
-    });
-  }
-
-  function openUserModal(uid){
-    currentManagedUid = uid;
-    const d = allUsersCache[uid] || {};
-    document.getElementById('umUserName').textContent = 'ম্যানেজ করুন: ' + (d.name || uid);
-    document.getElementById('umBalance').value = (d.balance || 0).toFixed(2);
-    document.getElementById('umAdjustNote').value = "";
-    document.getElementById('umActivationStatus').value = d.activationStatus || 'pending';
-    document.getElementById('umBalanceAlert').innerHTML = "";
-    loadUserHistory(uid);
-    loadUserSubmissions(uid);
-    const restrictions = d.restrictions || {};
-    document.getElementById('umToggles').innerHTML = FEATURES.map(function(f){
-      const r = restrictions[f.key] || { enabled: true, reason: "" };
-      const isOn = r.enabled !== false;
-      return `
-        <div class="rate-row">
-          <label style="flex:1;">${f.label}</label>
-          <input type="checkbox" id="umFeat_${f.key}" ${isOn ? 'checked' : ''} onchange="toggleReasonField('${f.key}')" style="width:auto;">
-        </div>
-        <div id="umReasonWrap_${f.key}" class="${isOn ? 'hidden' : ''}">
-          <textarea id="umReason_${f.key}" rows="2" placeholder="বন্ধ করার কারণ (ইউজার এটা দেখতে পাবে)">${r.reason || ''}</textarea>
-        </div>`;
-    }).join('');
-    document.getElementById('umNoticeText').value = "";
-    document.getElementById('umAlert').innerHTML = "";
-    document.getElementById('umNoticeAlert').innerHTML = "";
-    document.getElementById('userModal').classList.remove('hidden');
-  }
-
-  const TX_LABELS = {
-    task_approved: "✅ টাস্ক অনুমোদন",
-    withdrawal_approved: "💸 উইথড্র অনুমোদন",
-    admin_adjustment: "✏️ অ্যাডমিন ম্যানুয়াল এডিট"
-  };
-
-  function loadUserHistory(uid){
-    const box = document.getElementById('umHistory');
-    box.innerHTML = "লোড হচ্ছে...";
-    db.collection("transactions").where("uid","==",uid).orderBy("createdAt","desc").limit(20).get()
-      .then(function(snap){
-        if(snap.empty){ box.innerHTML = "কোনো হিস্টরি নেই"; return; }
-        let html = "";
-        snap.forEach(function(doc){
-          const d = doc.data();
-          const label = TX_LABELS[d.type] || d.type;
-          const sign = d.amount >= 0 ? "+" : "";
-          const color = d.amount >= 0 ? "#1a9c4c" : "#d9333f";
-          const when = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString('bn-BD') : "";
-          html += `<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
-            <b>${label}</b> — <span style="color:${color};">${sign}৳${Number(d.amount).toFixed(2)}</span>
-            (পরে ব্যালেন্স: ৳${Number(d.balanceAfter).toFixed(2)})<br>
-            <span class="muted">${d.note || ''} · ${when}</span>
-          </div>`;
-        });
-        box.innerHTML = html;
-      }).catch(function(err){
-        box.innerHTML = "হিস্টরি লোড করতে সমস্যা: " + err.message;
-      });
-  }
-
-  function formatProof(d){
-    if(d.proof){
-      if(typeof d.proof === 'string') return d.proof;
-      if(d.proof.fields && Array.isArray(d.proof.fields)){
-        return d.proof.fields.map(function(f){ return '<b>' + f.label + ':</b> ' + f.value; }).join('<br>');
-      }
-      if(d.proof.questionId){
-        let out = '<b>প্রশ্ন:</b> ' + (d.proof.question || '-') + '<br>';
-        if(d.proof.answerType === 'text'){
-          out += '<b>উত্তর:</b> ' + (d.proof.answerText || '-');
-        } else {
-          const mark = d.proof.isCorrect ? '<span style="color:#1a9c4c;">✅ সঠিক</span>' : '<span style="color:#d9333f;">❌ ভুল</span>';
-          out += '<b>বাছাই করা উত্তর:</b> ' + (d.proof.selectedOption || '-') + ' — ' + mark;
-        }
-        return out;
-      }
-      if(d.proof.link) return `<a href="${d.proof.link}" target="_blank" rel="noopener">লিংক দেখুন</a>`;
-      if(d.proof.text) return d.proof.text;
-      return JSON.stringify(d.proof);
-    }
-    if(d.answer) return String(d.answer);
-    return '-';
-  }
-
-  function loadUserSubmissions(uid){
-    const box = document.getElementById('umSubmissions');
-    box.innerHTML = "লোড হচ্ছে...";
-    db.collection("submissions").where("uid","==",uid).orderBy("createdAt","desc").limit(30).get()
-      .then(function(snap){
-        if(snap.empty){ box.innerHTML = "কোনো সাবমিশন নেই"; return; }
-        let html = "";
-        snap.forEach(function(doc){
-          const d = doc.data();
-          const badgeClass = d.status === 'approved' ? 'badge-approved' : d.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
-          const when = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString('bn-BD') : "";
-          html += `<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;">
-            <b>${d.type || '-'}</b> — ৳${(d.amount||0).toFixed(2)}
-            <span class="badge ${badgeClass}">${d.status}</span><br>
-            <span>উত্তর/প্রমাণ: ${formatProof(d)}</span><br>
-            <span class="muted">${when}</span>`;
-          if(d.status === 'pending'){
-            html += `<div class="mt-16">
-              <button class="btn btn-outline" style="width:auto;padding:5px 10px;font-size:12px;" onclick="approveSubmission('${doc.id}','${uid}',${d.amount||0})">Approve</button>
-              <button class="btn btn-danger" style="width:auto;padding:5px 10px;font-size:12px;" onclick="rejectSubmission('${doc.id}','${uid}')">Reject</button>
-            </div>`;
-          }
-          html += `</div>`;
-        });
-        box.innerHTML = html;
-      }).catch(function(err){
-        box.innerHTML = "সাবমিশন লোড করতে সমস্যা: " + err.message;
-      });
-  }
-
-  function saveUserBalanceStatus(){
-    if(!currentManagedUid) return;
-    const alertBox = document.getElementById('umBalanceAlert');
-    const balanceRaw = document.getElementById('umBalance').value;
-    const newBalance = parseFloat(balanceRaw);
-    const activationStatus = document.getElementById('umActivationStatus').value;
-    const note = document.getElementById('umAdjustNote').value.trim();
-
-    if(balanceRaw === "" || isNaN(newBalance) || newBalance < 0){
-      alertBox.innerHTML = '<div class="alert alert-error">সঠিক ব্যালেন্স দিন</div>';
-      return;
-    }
-
-    const uid = currentManagedUid;
-    const userRef = db.collection("users").doc(uid);
-    const txRef = db.collection("transactions").doc();
-
-    db.runTransaction(function(t){
-      return t.get(userRef).then(function(doc){
-        const oldBalance = doc.data().balance || 0;
-        const delta = newBalance - oldBalance;
-        t.update(userRef, { balance: newBalance, activationStatus: activationStatus });
-        if(delta !== 0){
-          t.set(txRef, {
-            uid: uid, type: "admin_adjustment", amount: delta, balanceAfter: newBalance,
-            note: note || "ম্যানুয়াল এডিট",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }
-      });
-    }).then(function(){
-      alertBox.innerHTML = '<div class="alert alert-success">ব্যালেন্স ও স্ট্যাটাস সেভ হয়েছে</div>';
-      if(allUsersCache[uid]){
-        allUsersCache[uid].balance = newBalance;
-        allUsersCache[uid].activationStatus = activationStatus;
-      }
-      document.getElementById('umAdjustNote').value = "";
-      loadUsersTab();
-      loadActivations();
-      loadUserHistory(uid);
-    }).catch(function(err){
-      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
-    });
-  }
-
-  function toggleReasonField(key){
-    const checked = document.getElementById('umFeat_' + key).checked;
-    document.getElementById('umReasonWrap_' + key).classList.toggle('hidden', checked);
-  }
-
-  function closeUserModal(){
-    document.getElementById('userModal').classList.add('hidden');
-    currentManagedUid = null;
-  }
-
-  function saveUserRestrictions(){
-    if(!currentManagedUid) return;
-    const restrictions = {};
-    FEATURES.forEach(function(f){
-      const enabled = document.getElementById('umFeat_' + f.key).checked;
-      const reasonField = document.getElementById('umReason_' + f.key);
-      restrictions[f.key] = { enabled: enabled, reason: enabled ? "" : (reasonField ? reasonField.value.trim() : "") };
-    });
-    db.collection("users").doc(currentManagedUid).update({ restrictions: restrictions }).then(function(){
-      document.getElementById('umAlert').innerHTML = '<div class="alert alert-success">এক্সেস সেভ হয়েছে</div>';
-      loadUsersTab();
-    }).catch(function(err){
-      document.getElementById('umAlert').innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
-    });
-  }
-
-  function sendUserNotice(){
-    if(!currentManagedUid) return;
-    const text = document.getElementById('umNoticeText').value.trim();
-    const alertBox = document.getElementById('umNoticeAlert');
-    if(!text){ alertBox.innerHTML = '<div class="alert alert-error">নোটিশের লেখা দিন</div>'; return; }
-    db.collection("notifications").add({
-      uid: currentManagedUid,
-      message: text,
-      read: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function(){
-      alertBox.innerHTML = '<div class="alert alert-success">নোটিশ পাঠানো হয়েছে</div>';
-      document.getElementById('umNoticeText').value = "";
-    }).catch(function(err){
-      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
     });
   }
 </script>

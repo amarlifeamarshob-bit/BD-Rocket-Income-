@@ -85,22 +85,12 @@
 <script>
   let currentUid = null;
   let currentBalance = 0;
-  let withdrawDisabled = false;
 
   loadUserProfile(function(profile){
     currentUid = profile.uid;
     currentBalance = profile.balance || 0;
     document.getElementById('balanceDisplay').textContent = "৳" + currentBalance.toFixed(2);
     loadHistory(profile.uid);
-
-    const restriction = profile.restrictions && profile.restrictions.withdraw;
-    if(restriction && restriction.enabled === false){
-      withdrawDisabled = true;
-      const withdrawCard = document.querySelector('.card');
-      withdrawCard.innerHTML =
-        '<div class="section-title">🚫 উইথড্র আপাতত বন্ধ আছে</div>' +
-        '<p class="muted">' + (restriction.reason || 'অ্যাডমিন আপনার উইথড্র সুবিধা আপাতত বন্ধ রেখেছেন।') + '</p>';
-    }
   });
 
   function updateFeePreview(){
@@ -115,7 +105,6 @@
   }
 
   function doWithdraw(){
-    if(withdrawDisabled) return;
     const alertBox = document.getElementById('alertBox');
     alertBox.innerHTML = "";
     const amount = parseFloat(document.getElementById('amountSelect').value);
