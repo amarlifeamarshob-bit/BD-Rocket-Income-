@@ -37,6 +37,7 @@
     <button onclick="showSection('rates',this)">Rates</button>
     <button onclick="showSection('siteContent',this)">Site Content</button>
     <button onclick="showSection('questions',this)">Questions</button>
+    <button onclick="showSection('users',this)">ইউজার</button>
   </div>
 
   <div id="activations" class="section active card">
@@ -204,6 +205,32 @@
     </table>
   </div>
 
+  <div id="users" class="section card">
+    <h3>সব ইউজার</h3>
+    <p class="muted" style="font-size:12px;">প্রতিজনের জন্য টাস্ক/উইথড্র/রেফার আলাদাভাবে অন-অফ করতে পারবে (অফ করলে ইউজার কারণটা দেখতে পাবে), আর চাইলে আলাদা নোটিশও পাঠাতে পারবে।</p>
+    <table>
+      <thead><tr><th>নাম</th><th>ফোন</th><th>স্ট্যাটাস</th><th>ব্যালেন্স</th><th>অ্যাকশন</th></tr></thead>
+      <tbody id="usersBody"><tr><td colspan="5" class="muted center">লোড হচ্ছে...</td></tr></tbody>
+    </table>
+  </div>
+
+</div>
+
+<div id="userModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;">
+    <h3 id="umUserName">ইউজার</h3>
+    <div id="umToggles"></div>
+    <div id="umAlert" class="mt-16"></div>
+    <button class="btn btn-primary mt-16" onclick="saveUserRestrictions()">এক্সেস সেভ করুন</button>
+
+    <hr style="margin:18px 0;border:none;border-top:1px solid #eee;">
+    <h4>🔔 স্পেশাল নোটিশ পাঠান</h4>
+    <textarea id="umNoticeText" rows="3" placeholder="শুধু এই ইউজারকে যে নোটিশ দেখাবে"></textarea>
+    <button class="btn btn-outline mt-16" onclick="sendUserNotice()">নোটিশ পাঠান</button>
+    <div id="umNoticeAlert" class="mt-16"></div>
+
+    <button class="btn btn-danger mt-16" onclick="closeUserModal()">বন্ধ করুন</button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -254,7 +281,7 @@
         loadRates();
         loadSiteContent();
         loadQuestions();
-      } else {
+        loadUsersTab();
         auth.signOut();
         alertBox.innerHTML = '<div class="alert alert-error">ভুল কোড</div>';
       }
@@ -615,6 +642,103 @@
 
   function deleteQuestion(id){
     db.collection("questions").doc(id).delete().then(loadQuestions);
+  }
+
+  // ================= Users (access control + special notices) =================
+  const FEATURES = [
+    { key: 'ad', label: 'Ad ভিউ টাস্ক' },
+    { key: 'survey', label: 'সার্ভে টাস্ক' },
+    { key: 'microjob', label: 'মাইক্রো জব টাস্ক' },
+    { key: 'withdraw', label: 'উইথড্র' },
+    { key: 'refer', label: 'রেফার সিস্টেম' }
+  ];
+  let allUsersCache = {};
+  let currentManagedUid = null;
+
+  function loadUsersTab(){
+    db.collection("users").orderBy("createdAt","desc").get().then(function(snap){
+      const body = document.getElementById('usersBody');
+      if(snap.empty){ body.innerHTML = '<tr><td colspan="5" class="muted center">কোনো ইউজার নেই</td></tr>'; return; }
+      body.innerHTML = "";
+      snap.forEach(function(doc){
+        const d = doc.data();
+        allUsersCache[doc.id] = d;
+        body.innerHTML += `<tr>
+          <td>${d.name || '-'}</td>
+          <td>${d.phone || '-'}</td>
+          <td><span class="badge badge-${d.activationStatus==='approved'?'approved':d.activationStatus==='rejected'?'rejected':'pending'}">${d.activationStatus||'-'}</span></td>
+          <td>৳${(d.balance||0).toFixed(2)}</td>
+          <td><button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:12px;" onclick="openUserModal('${doc.id}')">ম্যানেজ করুন</button></td>
+        </tr>`;
+      });
+    });
+  }
+
+  function openUserModal(uid){
+    currentManagedUid = uid;
+    const d = allUsersCache[uid] || {};
+    document.getElementById('umUserName').textContent = 'ম্যানেজ করুন: ' + (d.name || uid);
+    const restrictions = d.restrictions || {};
+    document.getElementById('umToggles').innerHTML = FEATURES.map(function(f){
+      const r = restrictions[f.key] || { enabled: true, reason: "" };
+      const isOn = r.enabled !== false;
+      return `
+        <div class="rate-row">
+          <label style="flex:1;">${f.label}</label>
+          <input type="checkbox" id="umFeat_${f.key}" ${isOn ? 'checked' : ''} onchange="toggleReasonField('${f.key}')" style="width:auto;">
+        </div>
+        <div id="umReasonWrap_${f.key}" class="${isOn ? 'hidden' : ''}">
+          <textarea id="umReason_${f.key}" rows="2" placeholder="বন্ধ করার কারণ (ইউজার এটা দেখতে পাবে)">${r.reason || ''}</textarea>
+        </div>`;
+    }).join('');
+    document.getElementById('umNoticeText').value = "";
+    document.getElementById('umAlert').innerHTML = "";
+    document.getElementById('umNoticeAlert').innerHTML = "";
+    document.getElementById('userModal').classList.remove('hidden');
+  }
+
+  function toggleReasonField(key){
+    const checked = document.getElementById('umFeat_' + key).checked;
+    document.getElementById('umReasonWrap_' + key).classList.toggle('hidden', checked);
+  }
+
+  function closeUserModal(){
+    document.getElementById('userModal').classList.add('hidden');
+    currentManagedUid = null;
+  }
+
+  function saveUserRestrictions(){
+    if(!currentManagedUid) return;
+    const restrictions = {};
+    FEATURES.forEach(function(f){
+      const enabled = document.getElementById('umFeat_' + f.key).checked;
+      const reasonField = document.getElementById('umReason_' + f.key);
+      restrictions[f.key] = { enabled: enabled, reason: enabled ? "" : (reasonField ? reasonField.value.trim() : "") };
+    });
+    db.collection("users").doc(currentManagedUid).update({ restrictions: restrictions }).then(function(){
+      document.getElementById('umAlert').innerHTML = '<div class="alert alert-success">এক্সেস সেভ হয়েছে</div>';
+      loadUsersTab();
+    }).catch(function(err){
+      document.getElementById('umAlert').innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
+    });
+  }
+
+  function sendUserNotice(){
+    if(!currentManagedUid) return;
+    const text = document.getElementById('umNoticeText').value.trim();
+    const alertBox = document.getElementById('umNoticeAlert');
+    if(!text){ alertBox.innerHTML = '<div class="alert alert-error">নোটিশের লেখা দিন</div>'; return; }
+    db.collection("notifications").add({
+      uid: currentManagedUid,
+      message: text,
+      read: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function(){
+      alertBox.innerHTML = '<div class="alert alert-success">নোটিশ পাঠানো হয়েছে</div>';
+      document.getElementById('umNoticeText').value = "";
+    }).catch(function(err){
+      alertBox.innerHTML = '<div class="alert alert-error">সমস্যা: ' + err.message + '</div>';
+    });
   }
 </script>
 </body>

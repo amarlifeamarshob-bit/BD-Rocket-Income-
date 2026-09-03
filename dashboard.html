@@ -11,7 +11,7 @@
 <div class="topbar">
   <div class="topbar-row">
     <div class="brand"><img src="assets/logo.jpg" alt="logo" data-site="logo"><span data-site="siteName">BD ROCKET INCOME</span></div>
-    <button class="icon-btn">🔔</button>
+    <button class="icon-btn" onclick="openNotifications()" style="position:relative;">🔔<span id="notifDot" class="hidden" style="position:absolute;top:2px;right:2px;width:9px;height:9px;background:#ff4d4f;border-radius:50%;"></span></button>
   </div>
   <div class="welcome-card">
     <div class="welcome-left">
@@ -61,6 +61,14 @@
 
 </div>
 
+<div id="notifModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;">
+    <h3>🔔 নোটিফিকেশন</h3>
+    <div id="notifList"><p class="muted center">লোড হচ্ছে...</p></div>
+    <button class="btn btn-outline mt-16" onclick="document.getElementById('notifModal').classList.add('hidden')">বন্ধ করুন</button>
+  </div>
+</div>
+
 <div class="bottom-nav">
   <a href="#" class="nav-item">🎧<span>Help</span></a>
   <a href="wallet.html" class="nav-item">💳<span>Wallet</span></a>
@@ -78,7 +86,10 @@
 <script>
   loadSiteContent();
 
+  let currentUidForNotif = null;
+
   loadUserProfile(function(profile){
+    currentUidForNotif = profile.uid;
     if(profile.activationStatus !== "approved"){
       window.location.href = "activate.html";
       return;
@@ -86,7 +97,31 @@
     document.getElementById('userName').textContent = profile.name || "User";
     document.getElementById('avatarInitial').textContent = (profile.name || "U")[0].toUpperCase();
     document.getElementById('userBalance').textContent = (profile.balance || 0).toFixed(2);
+
+    loadNotifications(profile.uid, function(list){
+      const hasUnread = list.some(n => !n.read);
+      document.getElementById('notifDot').classList.toggle('hidden', !hasUnread);
+    });
   });
+
+  function openNotifications(){
+    document.getElementById('notifModal').classList.remove('hidden');
+    if(!currentUidForNotif) return;
+    loadNotifications(currentUidForNotif, function(list){
+      const box = document.getElementById('notifList');
+      if(!list.length){
+        box.innerHTML = '<p class="muted center">কোনো নোটিফিকেশন নেই</p>';
+        return;
+      }
+      box.innerHTML = list.map(function(n){
+        return '<div class="card" style="background:' + (n.read ? '#f8f9fc' : '#eaf1ff') + ';box-shadow:none;padding:12px;margin-bottom:10px;">' + n.message + '</div>';
+      }).join('');
+      document.getElementById('notifDot').classList.add('hidden');
+      list.forEach(function(n){
+        if(!n.read) markNotificationRead(n.id);
+      });
+    });
+  }
 </script>
 </body>
 </html>
