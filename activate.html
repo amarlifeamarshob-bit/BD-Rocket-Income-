@@ -26,7 +26,7 @@
 
   <div class="qr-box">
     <p class="muted" style="margin-top:0;">bKash Merchant নম্বরে ৳50 Send Money করুন</p>
-    <img id="activationQrImg" src="assets/logo.jpg" alt="bKash QR (এখানে আপনার আসল bKash QR কোড বসান)">
+    <img src="assets/logo.jpg" alt="bKash QR (এখানে আপনার আসল bKash QR কোড বসান)">
     <div class="merchant-num">01XXXXXXXXX</div>
     <div class="steps">
       ১. bKash অ্যাপ খুলুন → Send Money<br>
@@ -56,14 +56,6 @@
 <script src="js/app.js"></script>
 <script>
   let currentUid = null;
-
-  // Admin panel থেকে বসানো bKash QR ছবি থাকলে সেটা লোড করে দেখানো হবে,
-  // না থাকলে ডিফল্ট assets/logo.jpg-ই থাকবে।
-  db.collection("settings").doc("siteContent").get().then(function(doc){
-    if(doc.exists && doc.data().activationQrUrl){
-      document.getElementById('activationQrImg').src = doc.data().activationQrUrl;
-    }
-  });
 
   loadUserProfile(function(profile){
     currentUid = profile.uid;
